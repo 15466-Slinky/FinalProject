@@ -8,6 +8,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <random>
+#include <cmath>
 
 PlayMode::PlayMode(Client &client_) : client(client_) {
 }
@@ -136,4 +137,50 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		draw_text(glm::vec2(-aspect + 0.1f,-0.9f), "(press WASD to change your total)", 0.09f);
 	}
 	GL_ERRORS();
+}
+
+std::vector<std::pair<glm::vec2, glm::vec2>> get_collisions(PlayMode::circle c, std::vector<PlayMode::line_segment> ls) {
+	//https://stackoverflow.com/questions/1073336/circle-line-segment-collision-detection-algorithm
+	std::vector<std::pair<glm::vec2, glm::vec2>> collision_data; //vector of pairs of points of intersection and normals
+
+	for (size_t i=0;i<ls.size();i++) { //iterate through each line segment
+		PlayMode::line_segment l = ls[i];
+
+		glm::vec2 start = l.first;
+		glm::vec2 end = l.second;
+		glm::vec2 circle_center = c.first;
+		float radius = c.second;
+
+		glm::vec2 d = end - start;
+		glm::vec2 f = start - circle_center;
+
+		float a = glm::dot(d, d);
+		float b = 2.0f * glm::dot(f, d);
+		float c = glm::dot(f, f) - radius * radius;
+
+		float discriminant = b * b - 4.0f * a * c;
+		if (discriminant >= 0.0f) { //we hit the circle in some way
+			discriminant = std::sqrt(discriminant);
+
+			float t1 = (-b - discriminant) / (2.0f * a);
+			float t2 = (-b + discriminant) / (2.0f * a);
+
+			if (t1 == t2) { //segment intersects tangent to circle
+				glm::vec2 point_of_intersection = start + t1 * d;
+				glm::vec2 surface_normal = point_of_intersection - circle_center;
+				collision_data.emplace_back(point_of_intersection, surface_normal);
+			}
+			else if (t1 >= 0.0f && t1 <= 1.0f) { //fully impaling the circle or starts outside the circle and ends inside
+				std::cout << "ERROR: Circle is being impaled or poked!" << std::endl;
+			}
+			else if (t2 >= 0.0f && t2 <= 1.0f) { //segment starts inside the circle and exits
+				std::cout << "ERROR: Circle has an exit wound!" << std::endl;
+			}
+			/*
+			else { no intersection! }
+			*/
+		}
+	}
+
+	return collision_data;
 }

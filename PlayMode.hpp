@@ -16,7 +16,20 @@ struct PlayMode : Mode {
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
+	//helper functions and typedefs
+	typedef std::pair<glm::vec2, glm::vec2> line_segment;	//defined as two endpoints
+	typedef std::pair<glm::vec2, float> circle;				//defined as a center position and a radius
+
+	/*
+	Function: get_collisions
+	Input: circle c, vector of line segments ls
+	Output: vector of pairs of positions and normals corresponding to line segments which collide
+	*/
+	std::vector<std::pair<glm::vec2, glm::vec2>> get_collisions(circle c, std::vector<line_segment> ls);
+
 	//----- game state -----
+
+	std::vector<line_segment> line_segments;
 
 	//input tracking:
 	struct Button {
