@@ -139,7 +139,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	GL_ERRORS();
 }
 
-std::vector<std::pair<glm::vec2, glm::vec2>> get_collisions(PlayMode::circle c, std::vector<PlayMode::line_segment> ls) {
+std::vector<std::pair<glm::vec2, glm::vec2>> PlayMode::get_collisions(PlayMode::circle c, std::vector<PlayMode::line_segment> ls) {
 	//https://stackoverflow.com/questions/1073336/circle-line-segment-collision-detection-algorithm
 	std::vector<std::pair<glm::vec2, glm::vec2>> collision_data; //vector of pairs of points of intersection and normals
 
