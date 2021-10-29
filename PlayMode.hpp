@@ -17,8 +17,8 @@ struct PlayMode : Mode {
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
 	//helper functions and typedefs
-	typedef std::pair<glm::vec2, glm::vec2> line_segment;	//defined as two endpoints
-	typedef std::pair<glm::vec2, float> circle;				//defined as a center position and a radius
+	typedef std::pair<glm::vec2, glm::vec2> line_segment; //defined as two endpoints
+	typedef std::pair<glm::vec2, float> circle; //defined as a center position and a radius
 
 	/*
 	Function: get_collisions
