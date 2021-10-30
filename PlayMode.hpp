@@ -26,7 +26,7 @@ struct PlayMode : Mode {
 	Input: circle c, vector of line segments ls
 	Output: vector of pairs of positions and normals corresponding to line segments which collide
 	*/
-	std::vector<std::pair<glm::vec2, glm::vec2>> get_collisions(circle c, std::vector<line_segment> ls);
+	std::vector<intersection> get_collisions(circle c, std::vector<line_segment> ls);
 
 	//----- game state -----
 
