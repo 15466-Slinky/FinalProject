@@ -31,7 +31,7 @@ struct PlayMode : Mode {
 	
 	//scene objects
 	std::vector<Scene::Transform*> platforms;
-	Scene::Transform* donut = nullptr;
+	Scene::Transform* doughnut = nullptr;
 	
 	Scene::Transform* cat_head = nullptr;
 	Scene::Transform* cat_tail = nullptr;

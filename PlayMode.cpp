@@ -48,8 +48,8 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 			cat_head = drawable.transform;
 		}else if(drawable_name == "CatTail"){
 			cat_tail = drawable.transform;
-		}else if(drawable_name == "Donut"){
-			donut = drawable.transform;
+		}else if(drawable_name == "Doughnut"){
+			doughnut = drawable.transform;
 		}else if(drawable_name.find("Platform") != std::string::npos){
 			platforms.push_back(drawable.transform);
 		}
@@ -60,7 +60,7 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	assert(platforms.size() == 9);	// make sure platform count matched
 	if(cat_head == nullptr) throw std::runtime_error("Cat head not found.");
 	if(cat_tail == nullptr) throw std::runtime_error("Cat tail not found.");
-	if(donut == nullptr) throw std::runtime_error("Donut head not found.");
+	if(doughnut == nullptr) throw std::runtime_error("Doughnut not found.");
 	
 	// get pointer to camera
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
