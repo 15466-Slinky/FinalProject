@@ -19,6 +19,7 @@ struct PlayMode : Mode {
 	//helper functions and typedefs
 	typedef std::pair<glm::vec2, glm::vec2> line_segment; //defined as two endpoints
 	typedef std::pair<glm::vec2, float> circle; //defined as a center position and a radius
+	typedef std::pair<glm::vec2, glm::vec2> intersection; //defined as a point of intersection and a surface normal vector
 
 	/*
 	Function: get_collisions
