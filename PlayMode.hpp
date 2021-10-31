@@ -1,6 +1,6 @@
 #include "Mode.hpp"
 
-#include "Connection.hpp"
+#include "Scene.hpp"
 
 #include <glm/glm.hpp>
 
@@ -8,7 +8,7 @@
 #include <deque>
 
 struct PlayMode : Mode {
-	PlayMode(Client &client);
+	PlayMode();
 	virtual ~PlayMode();
 
 	//functions called by main loop:
@@ -38,10 +38,16 @@ struct PlayMode : Mode {
 		uint8_t pressed = 0;
 	} left, right, down, up;
 
-	//last message from server:
-	std::string server_message;
-
-	//connection to server:
-	Client &client;
-
+	
+	//scene
+	Scene scene;
+	Scene::Camera *camera = nullptr;
+	
+	//scene objects
+	std::vector<Scene::Transform*> platforms;
+	Scene::Transform* doughnut = nullptr;
+	
+	Scene::Transform* cat_head = nullptr;
+	Scene::Transform* cat_tail = nullptr;
+	
 };
