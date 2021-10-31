@@ -47,12 +47,16 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 		
 		if(drawable_name == "CatHead"){
 			cat_head = drawable.transform;
+			assert(drawable.transform->position.z == 0.0f);	// make sure on xy plane
 		}else if(drawable_name == "CatTail"){
 			cat_tail = drawable.transform;
+			assert(drawable.transform.->osition.z == 0.0f);
 		}else if(drawable_name == "Doughnut"){
 			doughnut = drawable.transform;
+			assert(drawable.transform->position.z == 0.0f);
 		}else if(drawable_name.find("Platform") != std::string::npos){
 			platforms.push_back(drawable.transform);
+			assert(drawable.transform->position.z == 0.0f);
 		}
 	}
 	
@@ -225,4 +229,19 @@ std::vector<PlayMode::intersection> PlayMode::get_collisions(PlayMode::circle c,
 	}
 
 	return collision_data;
+}
+
+upper_surface get_upper_surface(Scene::Transform* platform){
+	// z component is always 0
+	// +y is up, +x is right
+	
+	glm::vec3 position = platform->position;
+	glm::vec3 scale = platform->scale;
+	
+	glm::vec2 min = glm::vec2(position.x - scale.x, position.y + scale.y);	//TODO: check the actual position return when test run
+	glm::vec2 max = glm::vec2(position.x + scale.x, position.y + scale.y);
+	
+	line_segment line(min, max);
+	
+	return line;
 }

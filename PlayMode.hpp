@@ -45,9 +45,16 @@ struct PlayMode : Mode {
 	
 	//scene objects
 	std::vector<Scene::Transform*> platforms;
+		
 	Scene::Transform* doughnut = nullptr;
-	
 	Scene::Transform* cat_head = nullptr;
 	Scene::Transform* cat_tail = nullptr;
+	
+	/*
+	Function: get_upper_line
+	Input: pointer to platform
+	Output: pairs of two end points of the platform's uppersurface line
+	*/
+	line_segment get_upper_line(Scene::Transform* platform);
 	
 };
