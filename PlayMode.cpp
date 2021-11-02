@@ -77,9 +77,10 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	scene.cameras.emplace_back(&scene.transforms.back());
 	
-	camera = &scene.cameras.front();	// used orthographic camera, may not need to change fov
-	camera -> fovy = glm::radians(60.0f);
-	camera -> near = 0.01f;
+	camera = &scene.cameras.front();	// used perspective camera, may not need to change fov
+	camera -> fovy = glm::radians(35.0f);		// adjust fov
+	//camera -> fovy = glm::radians(60.0f);
+	//camera -> near = 0.01f;
 	
 }
 
@@ -262,6 +263,8 @@ std::vector<PlayMode::intersection> PlayMode::get_collisions(PlayMode::circle c,
 	return collision_data;
 }
 
+
+// TODO: load all surface line segment, use local_to_world to handle rotated platform
 PlayMode::line_segment PlayMode::get_upper_line(Scene::Transform* platform){
 	// z component is always 0
 	// +y is up, +x is right
