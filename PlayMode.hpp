@@ -19,9 +19,37 @@ struct PlayMode : Mode {
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
 	//helper functions and typedefs
-	typedef std::pair<glm::vec2, glm::vec2> line_segment; //defined as two endpoints
-	typedef std::pair<glm::vec2, float> circle; //defined as a center position and a radius
-	typedef std::pair<glm::vec2, glm::vec2> intersection; //defined as a point of intersection and a surface normal vector
+	struct line_segment {
+		glm::vec2 ep1;
+		glm::vec2 ep2;
+
+		line_segment(glm::vec2 ep1_, glm::vec2 ep2_) {
+			assert(ep1_ != ep2); //we do not allow degenerate line segments
+			ep1 = ep1_;
+			ep2 = ep2_;
+		}
+	};
+
+	struct circle {
+		glm::vec2 center;
+		float radius;
+
+		circle(glm::vec2 center_, float radius_) {
+			assert(radius_ != 0.0f); //we do not allow degenerate circles
+			center = center_;
+			radius = radius_;
+		}
+	};
+
+	struct intersection {
+		glm::vec2 point_of_intersection;
+		glm::vec2 surface_normal;
+
+		intersection(glm::vec2 point_of_intersection_, glm::vec2 surface_normal_) {
+			point_of_intersection = point_of_intersection_;
+			surface_normal = surface_normal_;
+		}
+	};
 
 	/*
 	Function: get_collisions
@@ -31,7 +59,6 @@ struct PlayMode : Mode {
 	std::vector<intersection> get_collisions(circle c, std::vector<line_segment> ls);
 
 	//----- game state -----
-
 	std::vector<line_segment> line_segments;
 
 	//input tracking:

@@ -147,7 +147,7 @@ void PlayMode::update(float elapsed) {
 	auto collisions = get_collisions(head_circle, line_segments);
 
 	for(intersection &i : collisions) {
-		printf("%f %f \t %f %f\n", i.first.x, i.first.y, i.second.x, i.second.y);
+		printf("%f %f \t %f %f\n", i.point_of_intersection.x, i.point_of_intersection.y, i.surface_normal.x, i.surface_normal.y);
 	}
 
 	// Do phyics update
@@ -226,14 +226,13 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 std::vector<PlayMode::intersection> PlayMode::get_collisions(PlayMode::circle c, std::vector<PlayMode::line_segment> ls) {
 	//https://stackoverflow.com/questions/1073336/circle-line-segment-collision-detection-algorithm
-	std::vector<std::pair<glm::vec2, glm::vec2>> collision_data; //vector of pairs of points of intersection and normals
+	std::vector<PlayMode::intersection> collision_data; //vector of pairs of points of intersection and normals
 
 	for (PlayMode::line_segment l : ls) { //iterate through each line segment
-
-		glm::vec2 start = l.first;
-		glm::vec2 end = l.second;
-		glm::vec2 circle_center = c.first;
-		float radius = c.second;
+		glm::vec2 start = l.ep1;
+		glm::vec2 end = l.ep2;
+		glm::vec2 circle_center = c.center;
+		float radius = c.radius;
 
 		glm::vec2 d = end - start;
 		glm::vec2 f = start - circle_center;
@@ -251,14 +250,27 @@ std::vector<PlayMode::intersection> PlayMode::get_collisions(PlayMode::circle c,
 
 			if (t1 == t2) { //segment intersects tangent to circle
 				glm::vec2 point_of_intersection = start + t1 * d;
-				glm::vec2 surface_normal = point_of_intersection - circle_center;
+				glm::vec2 surface_normal = glm::normalize(point_of_intersection - circle_center);
 				collision_data.emplace_back(point_of_intersection, surface_normal);
 			}
-			else if (t1 >= 0.0f && t1 <= 1.0f) { //fully impaling the circle or starts outside the circle and ends inside
-				std::cout << "ERROR: Circle is being impaled or poked!" << std::endl;
+			else if (t1 >= 0.0f && t1 <= 1.0f && t2 >= 0.0f && t2 <= 1.0f) { //segment impales the circle
+				glm::vec2 point_of_intersection_1 = start + t1 * d;
+				glm::vec2 point_of_intersection_2 = start + t2 * d;
+				glm::vec2 midpoint = (point_of_intersection_1 + point_of_intersection_2) / 2.0f;
+				glm::vec2 surface_normal = glm::normalize(midpoint - circle_center);
+				collision_data.emplace_back(midpoint, surface_normal);
 			}
-			else if (t2 >= 0.0f && t2 <= 1.0f) { //segment starts inside the circle and exits
-				std::cout << "ERROR: Circle has an exit wound!" << std::endl;
+			else if (t1 >= 0.0f && t1 <= 1.0f) { //segment starts outside the circle and ends inside (poke)
+				glm::vec2 point_of_intersection = start + t1 * d;
+				glm::vec2 dir = point_of_intersection - circle_center;
+				glm::vec2 surface_normal = glm::normalize(glm::vec2(-dir.y, dir.x)); //may not be the right direction
+				collision_data.emplace_back(point_of_intersection, surface_normal);
+			}
+			else if (t2 >= 0.0f && t2 <= 1.0f) { //segment starts inside the circle and exits (exit wound)
+				glm::vec2 point_of_intersection = start + t2 * d;
+				glm::vec2 dir = point_of_intersection - circle_center;
+				glm::vec2 surface_normal = glm::normalize(glm::vec2(-dir.y, dir.x)); //may not be the right direction
+				collision_data.emplace_back(point_of_intersection, surface_normal);
 			}
 			/*
 			else { no intersection! }
