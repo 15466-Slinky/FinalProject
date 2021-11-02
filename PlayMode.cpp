@@ -281,15 +281,15 @@ std::vector<PlayMode::intersection> PlayMode::get_collisions(PlayMode::circle c,
 	return collision_data;
 }
 
-intersection PlayMode::get_capsule_collision(PlayMode::circle c, PlayMode::line_segment l) {
+PlayMode::intersection PlayMode::get_capsule_collision(PlayMode::circle c, PlayMode::line_segment l) {
 	glm::vec2 point = c.center;
-	glm::vec2 radius = c.radius;
+	float radius = c.radius;
 	glm::vec2 start = l.ep1;
 	glm::vec2 end = l.ep2;
 
 	//test the line segment first
 	//project point onto line segment: https://stackoverflow.com/questions/10301001/perpendicular-on-a-line-segment-from-a-given-point
-	float t = ((point.x - start.x) * (end.x - start.x) + (point.y - start.y) * (end.y - start.y)) / ((end.x - start.x) ^ 2 + (end.y - start.y) ^ 2)
+	float t = ((point.x - start.x) * (end.x - start.x) + (point.y - start.y) * (end.y - start.y)) / (pow(end.x - start.x, 2) + pow(end.y - start.y, 2));
 	if (t >= 0.0f && t <= 1.0f) {
 		glm::vec2 projection = start + t * (end - start);
 		float distance = glm::distance(point, projection);
