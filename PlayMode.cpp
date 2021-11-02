@@ -138,9 +138,11 @@ void PlayMode::update(float elapsed) {
 	else if(right.pressed) head_vel.x = PLAYER_SPEED;
 	if(up.pressed) head_vel.y = PLAYER_SPEED;
 	else if(down.pressed) head_vel.y = -PLAYER_SPEED;
-
-	glm::vec2 spring_force = head_pos - tail_pos;
+	
+	glm::vec2 dist = (head_pos - tail_pos) - playerlength;
+	glm::vec2 spring_force = dist * k;
 	tail_vel += spring_force * elapsed;
+	tail_vel *= 0.99f; //velocity damping
 
 	circle head_circle(head_pos, 1.f);
 	auto collisions = get_collisions(head_circle, line_segments);

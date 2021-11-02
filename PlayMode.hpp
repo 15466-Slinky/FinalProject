@@ -45,6 +45,8 @@ struct PlayMode : Mode {
 	glm::vec2 head_vel;
 	glm::vec2 tail_pos;
 	glm::vec2 tail_vel;
+	float playerlength = 5.0f; //length of spring
+	float k = 4.0f; //spring constant
 
 	
 	//scene
