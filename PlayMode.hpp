@@ -54,9 +54,18 @@ struct PlayMode : Mode {
 	/*
 	Function: get_collisions
 	Input: circle c, vector of line segments ls
-	Output: vector of pairs of positions and normals corresponding to line segments which collide
+	Output: vector of intersections corresponding to line segments which collide
 	*/
 	std::vector<intersection> get_collisions(circle c, std::vector<line_segment> ls);
+
+	/*
+	Function: get_capsule_collision
+	Input: circle c, line segment l
+	Output: an "intersection" where the point of intersection is the closest exterior point instead.
+			if we do not collide with the capsule zone, then the point of intersection
+			and the surface normals are vectors of 0.0f
+	*/
+	intersection get_capsule_collision(circle c, line_segment l);
 
 	//----- game state -----
 	std::vector<line_segment> line_segments;
