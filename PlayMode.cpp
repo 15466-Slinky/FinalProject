@@ -67,6 +67,12 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	if(cat_tail == nullptr) throw std::runtime_error("Cat tail not found.");
 	if(doughnut == nullptr) throw std::runtime_error("Doughnut not found.");
 	
+	head_pos.x = cat_head->position.x;
+	head_pos.y = cat_head->position.y;
+	
+	tail_pos.x = cat_tail->position.x;
+	tail_pos.y = cat_tail->position.y;
+
 	// get pointer to camera
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	scene.cameras.emplace_back(&scene.transforms.back());
@@ -122,7 +128,26 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::update(float elapsed) {
-	//TODO: remove multiplayer stuff
+	head_vel.x = 0;
+	head_vel.y = 0;
+	if(left.pressed) head_vel.x = -PLAYER_SPEED;
+	else if(right.pressed) head_vel.x = PLAYER_SPEED;
+	if(up.pressed) head_vel.y = PLAYER_SPEED;
+	else if(down.pressed) head_vel.y = -PLAYER_SPEED;
+
+	glm::vec2 spring_force = head_pos - tail_pos;
+	tail_vel += spring_force * elapsed;
+
+	circle head_circle(head_pos, 1.f);
+	auto collisions = get_collisions(head_circle, line_segments);
+
+	for(intersection &i : collisions) {
+		printf("%f %f \t %f %f\n", i.first.x, i.first.y, i.second.x, i.second.y);
+	}
+
+	// Do phyics update
+	head_pos += head_vel * elapsed;
+	tail_pos += tail_vel * elapsed;
 
 	//reset button press counters:
 	left.downs = 0;
@@ -162,6 +187,12 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 //
 //		draw_text(glm::vec2(-aspect + 0.1f,-0.9f), "(press WASD to change your total)", 0.09f);
 //	}
+
+	cat_head->position.x = head_pos.x;
+	cat_head->position.y = head_pos.y;
+
+	cat_tail->position.x = tail_pos.x;
+	cat_tail->position.y = tail_pos.y;
 	
 	//draw scene
 	camera->aspect = float(drawable_size.x) / float(drawable_size.y);

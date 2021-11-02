@@ -7,6 +7,8 @@
 #include <vector>
 #include <deque>
 
+#define PLAYER_SPEED 10.f
+
 struct PlayMode : Mode {
 	PlayMode();
 	virtual ~PlayMode();
@@ -37,6 +39,12 @@ struct PlayMode : Mode {
 		uint8_t downs = 0;
 		uint8_t pressed = 0;
 	} left, right, down, up;
+
+	// Player motion
+	glm::vec2 head_pos;
+	glm::vec2 head_vel;
+	glm::vec2 tail_pos;
+	glm::vec2 tail_vel;
 
 	
 	//scene
