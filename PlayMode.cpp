@@ -73,6 +73,10 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	tail_pos.x = cat_tail->position.x;
 	tail_pos.y = cat_tail->position.y;
 
+	for(auto p : platforms) {
+		line_segments.emplace_back(get_upper_line(p));
+	}
+
 	// get pointer to camera
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	scene.cameras.emplace_back(&scene.transforms.back());
@@ -148,6 +152,8 @@ void PlayMode::update(float elapsed) {
 	// Do phyics update
 	head_pos += head_vel * elapsed;
 	tail_pos += tail_vel * elapsed;
+
+	tail_vel *= .99f;
 
 	//reset button press counters:
 	left.downs = 0;
