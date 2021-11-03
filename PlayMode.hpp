@@ -67,6 +67,11 @@ struct PlayMode : Mode {
 	*/
 	intersection get_capsule_collision(circle c, line_segment l);
 
+	//----- movement updates -----
+	void free_movement(float elapsed);
+	void fixed_head_movement(float elapsed);
+	void fixed_tail_movement(float elapsed);
+
 	//----- game state -----
 	std::vector<line_segment> line_segments;
 
@@ -75,6 +80,8 @@ struct PlayMode : Mode {
 		uint8_t downs = 0;
 		uint8_t pressed = 0;
 	} left, right, down, up;
+	bool fixed_head = false;
+	bool fixed_tail = false;
 
 	// Player motion
 	glm::vec2 head_pos;
@@ -83,7 +90,6 @@ struct PlayMode : Mode {
 	glm::vec2 tail_vel;
 	float playerlength = 5.0f; //length of spring
 	float k = 4.0f; //spring constant
-
 	
 	//scene
 	Scene scene;

@@ -73,6 +73,9 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	tail_pos.x = cat_tail->position.x;
 	tail_pos.y = cat_tail->position.y;
 
+	head_vel = glm::vec2(0.0f, 0.0f);
+	tail_vel = glm::vec2(0.0f, 0.0f);
+
 	for(auto p : platforms) {
 		line_segments.emplace_back(get_upper_line(p));
 	}
@@ -96,67 +99,120 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	if (evt.type == SDL_KEYDOWN) {
 		if (evt.key.repeat) {
 			//ignore repeats
-		} else if (evt.key.keysym.sym == SDLK_a) {
+		} else if (evt.key.keysym.sym == SDLK_a || evt.key.keysym.sym == SDLK_LEFT) {
 			left.downs += 1;
 			left.pressed = true;
 			return true;
-		} else if (evt.key.keysym.sym == SDLK_d) {
+		} else if (evt.key.keysym.sym == SDLK_d || evt.key.keysym.sym == SDLK_RIGHT) {
 			right.downs += 1;
 			right.pressed = true;
 			return true;
-		} else if (evt.key.keysym.sym == SDLK_w) {
+		} else if (evt.key.keysym.sym == SDLK_w || evt.key.keysym.sym == SDLK_UP) {
 			up.downs += 1;
 			up.pressed = true;
 			return true;
-		} else if (evt.key.keysym.sym == SDLK_s) {
+		} else if (evt.key.keysym.sym == SDLK_s || evt.key.keysym.sym == SDLK_DOWN) {
 			down.downs += 1;
 			down.pressed = true;
 			return true;
+		} else if (evt.key.keysym.sym == SDLK_q) {
+			fixed_tail = !fixed_tail;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_e) {
+			fixed_head = !fixed_head;
+			return true;
 		}
 	} else if (evt.type == SDL_KEYUP) {
-		if (evt.key.keysym.sym == SDLK_a) {
+		if (evt.key.keysym.sym == SDLK_a || evt.key.keysym.sym == SDLK_LEFT) {
 			left.pressed = false;
 			return true;
-		} else if (evt.key.keysym.sym == SDLK_d) {
+		} else if (evt.key.keysym.sym == SDLK_d || evt.key.keysym.sym == SDLK_RIGHT) {
 			right.pressed = false;
 			return true;
-		} else if (evt.key.keysym.sym == SDLK_w) {
+		} else if (evt.key.keysym.sym == SDLK_w || evt.key.keysym.sym == SDLK_UP) {
 			up.pressed = false;
 			return true;
-		} else if (evt.key.keysym.sym == SDLK_s) {
+		} else if (evt.key.keysym.sym == SDLK_s || evt.key.keysym.sym == SDLK_DOWN) {
 			down.pressed = false;
 			return true;
 		}
 	}
-
 	return false;
 }
 
-void PlayMode::update(float elapsed) {
-	head_vel.x = 0;
-	head_vel.y = 0;
-	if(left.pressed) head_vel.x = -PLAYER_SPEED;
-	else if(right.pressed) head_vel.x = PLAYER_SPEED;
-	if(up.pressed) head_vel.y = PLAYER_SPEED;
-	else if(down.pressed) head_vel.y = -PLAYER_SPEED;
-	
+void PlayMode::free_movement(float elapsed) {
+	//head_vel.x = 0;
+	//head_vel.y = 0;
+	if (left.pressed) head_vel.x = -PLAYER_SPEED;
+	else if (right.pressed) head_vel.x = PLAYER_SPEED;
+	if (up.pressed) head_vel.y = PLAYER_SPEED;
+	else if (down.pressed) head_vel.y = -PLAYER_SPEED;
+
 	glm::vec2 dist = (head_pos - tail_pos) - playerlength;
 	glm::vec2 spring_force = dist * k;
 	tail_vel += spring_force * elapsed;
-	tail_vel *= 0.99f; //velocity damping
+	head_vel -= spring_force * elapsed;
+}
 
+void PlayMode::fixed_head_movement(float elapsed) {
+	head_vel.x = 0;
+	head_vel.y = 0;
+	//tail_vel.x = 0;
+	//tail_vel.y = 0;
+	if (left.pressed) tail_vel.x = -PLAYER_SPEED;
+	else if (right.pressed) tail_vel.x = PLAYER_SPEED;
+	if (up.pressed) tail_vel.y = PLAYER_SPEED;
+	else if (down.pressed) tail_vel.y = -PLAYER_SPEED;
+
+	glm::vec2 dist = (head_pos - tail_pos) - playerlength;
+	glm::vec2 spring_force = dist * k;
+	tail_vel += spring_force * elapsed;
+}
+
+void PlayMode::fixed_tail_movement(float elapsed) {
+	//head_vel.x = 0;
+	//head_vel.y = 0;
+	tail_vel.x = 0;
+	tail_vel.y = 0;
+	if (left.pressed) head_vel.x = -PLAYER_SPEED;
+	else if (right.pressed) head_vel.x = PLAYER_SPEED;
+	if (up.pressed) head_vel.y = PLAYER_SPEED;
+	else if (down.pressed) head_vel.y = -PLAYER_SPEED;
+
+	glm::vec2 dist = (head_pos - tail_pos) - playerlength;
+	glm::vec2 spring_force = dist * k;
+	head_vel -= spring_force * elapsed;
+}
+
+void PlayMode::update(float elapsed) {
+	
+	if (!fixed_head && !fixed_tail) {
+		free_movement(elapsed);
+	} else if (fixed_head && fixed_tail) {
+		head_vel.x = 0;
+		head_vel.y = 0;
+		tail_vel.x = 0;
+		tail_vel.y = 0;
+		std::cout << "you have stuck both your head and tail and cannot move\n";
+	} else if (fixed_head) {
+		fixed_head_movement(elapsed);
+	} else if (fixed_tail) {
+		fixed_tail_movement(elapsed);
+	}
+
+	// Collisions
 	circle head_circle(head_pos, 1.f);
 	auto collisions = get_collisions(head_circle, line_segments);
 
-	for(intersection &i : collisions) {
+	for (intersection& i : collisions) {
 		printf("%f %f \t %f %f\n", i.point_of_intersection.x, i.point_of_intersection.y, i.surface_normal.x, i.surface_normal.y);
 	}
 
 	// Do phyics update
 	head_pos += head_vel * elapsed;
 	tail_pos += tail_vel * elapsed;
-
-	tail_vel *= .99f;
+	tail_vel *= .99f; //velocity damping
+	head_vel *= .99f;
 
 	//reset button press counters:
 	left.downs = 0;
@@ -291,7 +347,7 @@ PlayMode::intersection PlayMode::get_capsule_collision(PlayMode::circle c, PlayM
 
 	//test the line segment first
 	//project point onto line segment: https://stackoverflow.com/questions/10301001/perpendicular-on-a-line-segment-from-a-given-point
-	float t = ((point.x - start.x) * (end.x - start.x) + (point.y - start.y) * (end.y - start.y)) / (pow(end.x - start.x, 2) + pow(end.y - start.y, 2));
+	float t = ((point.x - start.x) * (end.x - start.x) + (point.y - start.y) * (end.y - start.y)) / (powf(end.x - start.x, 2) + powf(end.y - start.y, 2));
 	if (t >= 0.0f && t <= 1.0f) {
 		glm::vec2 projection = start + t * (end - start);
 		float distance = glm::distance(point, projection);
