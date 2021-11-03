@@ -81,9 +81,10 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	scene.cameras.emplace_back(&scene.transforms.back());
 	
-	camera = &scene.cameras.front();	// used orthographic camera, may not need to change fov
-	camera -> fovy = glm::radians(60.0f);
-	camera -> near = 0.01f;
+	camera = &scene.cameras.front();	// used perspective camera, may not need to change fov
+	camera -> fovy = glm::radians(35.0f);		// adjust fov
+	//camera -> fovy = glm::radians(60.0f);
+	//camera -> near = 0.01f;
 	
 }
 
@@ -148,7 +149,7 @@ void PlayMode::update(float elapsed) {
 	auto collisions = get_collisions(head_circle, line_segments);
 
 	for(intersection &i : collisions) {
-		printf("%f %f \t %f %f\n", i.first.x, i.first.y, i.second.x, i.second.y);
+		printf("%f %f \t %f %f\n", i.point_of_intersection.x, i.point_of_intersection.y, i.surface_normal.x, i.surface_normal.y);
 	}
 
 	// Do phyics update
@@ -227,14 +228,13 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 std::vector<PlayMode::intersection> PlayMode::get_collisions(PlayMode::circle c, std::vector<PlayMode::line_segment> ls) {
 	//https://stackoverflow.com/questions/1073336/circle-line-segment-collision-detection-algorithm
-	std::vector<std::pair<glm::vec2, glm::vec2>> collision_data; //vector of pairs of points of intersection and normals
+	std::vector<PlayMode::intersection> collision_data; //vector of pairs of points of intersection and normals
 
 	for (PlayMode::line_segment l : ls) { //iterate through each line segment
-
-		glm::vec2 start = l.first;
-		glm::vec2 end = l.second;
-		glm::vec2 circle_center = c.first;
-		float radius = c.second;
+		glm::vec2 start = l.ep1;
+		glm::vec2 end = l.ep2;
+		glm::vec2 circle_center = c.center;
+		float radius = c.radius;
 
 		glm::vec2 d = end - start;
 		glm::vec2 f = start - circle_center;
@@ -252,14 +252,27 @@ std::vector<PlayMode::intersection> PlayMode::get_collisions(PlayMode::circle c,
 
 			if (t1 == t2) { //segment intersects tangent to circle
 				glm::vec2 point_of_intersection = start + t1 * d;
-				glm::vec2 surface_normal = point_of_intersection - circle_center;
+				glm::vec2 surface_normal = glm::normalize(point_of_intersection - circle_center);
 				collision_data.emplace_back(point_of_intersection, surface_normal);
 			}
-			else if (t1 >= 0.0f && t1 <= 1.0f) { //fully impaling the circle or starts outside the circle and ends inside
-				std::cout << "ERROR: Circle is being impaled or poked!" << std::endl;
+			else if (t1 >= 0.0f && t1 <= 1.0f && t2 >= 0.0f && t2 <= 1.0f) { //segment impales the circle
+				glm::vec2 point_of_intersection_1 = start + t1 * d;
+				glm::vec2 point_of_intersection_2 = start + t2 * d;
+				glm::vec2 midpoint = (point_of_intersection_1 + point_of_intersection_2) / 2.0f;
+				glm::vec2 surface_normal = glm::normalize(midpoint - circle_center);
+				collision_data.emplace_back(midpoint, surface_normal);
 			}
-			else if (t2 >= 0.0f && t2 <= 1.0f) { //segment starts inside the circle and exits
-				std::cout << "ERROR: Circle has an exit wound!" << std::endl;
+			else if (t1 >= 0.0f && t1 <= 1.0f) { //segment starts outside the circle and ends inside (poke)
+				glm::vec2 point_of_intersection = start + t1 * d;
+				glm::vec2 dir = point_of_intersection - circle_center;
+				glm::vec2 surface_normal = glm::normalize(glm::vec2(-dir.y, dir.x)); //may not be the right direction
+				collision_data.emplace_back(point_of_intersection, surface_normal);
+			}
+			else if (t2 >= 0.0f && t2 <= 1.0f) { //segment starts inside the circle and exits (exit wound)
+				glm::vec2 point_of_intersection = start + t2 * d;
+				glm::vec2 dir = point_of_intersection - circle_center;
+				glm::vec2 surface_normal = glm::normalize(glm::vec2(-dir.y, dir.x)); //may not be the right direction
+				collision_data.emplace_back(point_of_intersection, surface_normal);
 			}
 			/*
 			else { no intersection! }
@@ -270,6 +283,45 @@ std::vector<PlayMode::intersection> PlayMode::get_collisions(PlayMode::circle c,
 	return collision_data;
 }
 
+PlayMode::intersection PlayMode::get_capsule_collision(PlayMode::circle c, PlayMode::line_segment l) {
+	glm::vec2 point = c.center;
+	float radius = c.radius;
+	glm::vec2 start = l.ep1;
+	glm::vec2 end = l.ep2;
+
+	//test the line segment first
+	//project point onto line segment: https://stackoverflow.com/questions/10301001/perpendicular-on-a-line-segment-from-a-given-point
+	float t = ((point.x - start.x) * (end.x - start.x) + (point.y - start.y) * (end.y - start.y)) / (pow(end.x - start.x, 2) + pow(end.y - start.y, 2));
+	if (t >= 0.0f && t <= 1.0f) {
+		glm::vec2 projection = start + t * (end - start);
+		float distance = glm::distance(point, projection);
+
+		if (distance <= radius) {
+			glm::vec2 surface_normal = glm::normalize(point - projection);
+			glm::vec2 closest_exterior_point = projection + radius * surface_normal;
+
+			return PlayMode::intersection(closest_exterior_point, surface_normal);
+		}
+	}
+
+	//test the endpoints of the line segment
+	if (glm::distance(point, start) <= radius) {
+		glm::vec2 surface_normal = glm::normalize(point - start);
+		glm::vec2 closest_exterior_point = start + radius * surface_normal;
+
+		return PlayMode::intersection(closest_exterior_point, surface_normal);
+	}
+	if (glm::distance(point, end) <= radius) {
+		glm::vec2 surface_normal = glm::normalize(point - end);
+		glm::vec2 closest_exterior_point = end + radius * surface_normal;
+
+		return PlayMode::intersection(closest_exterior_point, surface_normal);
+	}
+
+	return PlayMode::intersection(glm::vec2(0.0f), glm::vec2(0.0f)); //point isn't within the capsule
+}
+
+// TODO: load all surface line segment, use local_to_world to handle rotated platform
 PlayMode::line_segment PlayMode::get_upper_line(Scene::Transform* platform){
 	// z component is always 0
 	// +y is up, +x is right

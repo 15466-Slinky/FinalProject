@@ -19,19 +19,55 @@ struct PlayMode : Mode {
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
 	//helper functions and typedefs
-	typedef std::pair<glm::vec2, glm::vec2> line_segment; //defined as two endpoints
-	typedef std::pair<glm::vec2, float> circle; //defined as a center position and a radius
-	typedef std::pair<glm::vec2, glm::vec2> intersection; //defined as a point of intersection and a surface normal vector
+	struct line_segment {
+		glm::vec2 ep1;
+		glm::vec2 ep2;
+
+		line_segment(glm::vec2 ep1_, glm::vec2 ep2_) {
+			assert(ep1_ != ep2); //we do not allow degenerate line segments
+			ep1 = ep1_;
+			ep2 = ep2_;
+		}
+	};
+
+	struct circle {
+		glm::vec2 center;
+		float radius;
+
+		circle(glm::vec2 center_, float radius_) {
+			assert(radius_ != 0.0f); //we do not allow degenerate circles
+			center = center_;
+			radius = radius_;
+		}
+	};
+
+	struct intersection {
+		glm::vec2 point_of_intersection;
+		glm::vec2 surface_normal;
+
+		intersection(glm::vec2 point_of_intersection_, glm::vec2 surface_normal_) {
+			point_of_intersection = point_of_intersection_;
+			surface_normal = surface_normal_;
+		}
+	};
 
 	/*
 	Function: get_collisions
 	Input: circle c, vector of line segments ls
-	Output: vector of pairs of positions and normals corresponding to line segments which collide
+	Output: vector of intersections corresponding to line segments which collide
 	*/
 	std::vector<intersection> get_collisions(circle c, std::vector<line_segment> ls);
 
-	//----- game state -----
+	/*
+	Function: get_capsule_collision
+	Input: circle c, line segment l
+	Output: an "intersection" where the point of intersection is the closest exterior point instead.
+			if we do not collide with the capsule zone, then the point of intersection
+			and the surface normals are vectors of 0.0f
+	*/
+	intersection get_capsule_collision(circle c, line_segment l);
 
+	//----- game state -----
 	std::vector<line_segment> line_segments;
 
 	//input tracking:
