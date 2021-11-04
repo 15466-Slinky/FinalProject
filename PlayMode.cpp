@@ -415,20 +415,38 @@ std::vector<PlayMode::line_segment> PlayMode::get_lines(Scene::Transform* platfo
 	
 	glm::vec3 position = platform->position;
 	glm::vec3 scale = platform->scale;
-	glm::mat4x3 to_world = platform->make_local_to_world();
+	//glm::mat4x3 to_world = platform->make_local_to_world();
 
+	
 	// left line
-	glm::vec3 l_min = to_world * glm::vec4(position.x - scale.x, position.y + scale.y, 0.0f, 1.0f);
-	glm::vec3 l_max = to_world * glm::vec4(position.x - scale.x, position.y - scale.y, 0.0f, 1.0f);
+	glm::vec3 l_min = platform->rotation * glm::vec3(-scale.x, scale.y, 0.0f) + position;
+	glm::vec3 l_max = platform->rotation * glm::vec3(-scale.x, scale.y, 0.0f) + position;
+	
 	// right line
-	glm::vec3 r_min = to_world * glm::vec4(position.x + scale.x, position.y + scale.y, 0.0f, 1.0f);
-	glm::vec3 r_max = to_world * glm::vec4(position.x + scale.x, position.y - scale.y, 0.0f, 1.0f);
+	glm::vec3 r_min = platform->rotation * glm::vec3(scale.x, scale.y, 0.0f) + position;
+	glm::vec3 r_max = platform->rotation * glm::vec3(scale.x, -scale.y, 0.0f) + position;
 	// upper line
-	glm::vec3 u_min = to_world * glm::vec4(position.x - scale.x, position.y + scale.y, 0.0f, 1.0f);
-	glm::vec3 u_max = to_world * glm::vec4(position.x + scale.x, position.y + scale.y, 0.0f, 1.0f);
+	glm::vec3 u_min = platform->rotation * glm::vec3(-scale.x, scale.y, 0.0f) + position;
+	glm::vec3 u_max = platform->rotation * glm::vec3(scale.x, scale.y, 0.0f) + position;
 	// bottom line
-	glm::vec3 d_min = to_world * glm::vec4(position.x - scale.x, position.y - scale.y, 0.0f, 1.0f);
-	glm::vec3 d_max = to_world * glm::vec4(position.x + scale.x, position.y - scale.y, 0.0f, 1.0f);
+	glm::vec3 d_min = platform->rotation * glm::vec3(-scale.x, -scale.y, 0.0f) + position;
+	glm::vec3 d_max = platform->rotation * glm::vec3(scale.x, -scale.y, 0.0f) + position;
+	
+
+	/*
+	// left line
+	glm::vec3 l_min = to_world * glm::vec4(-scale.x, scale.y, 0.0f, 1.0f);
+	glm::vec3 l_max = to_world * glm::vec4(-scale.x, -scale.y, 0.0f, 1.0f);
+	// right line
+	glm::vec3 r_min = to_world * glm::vec4(scale.x, scale.y, 0.0f, 1.0f);
+	glm::vec3 r_max = to_world * glm::vec4(scale.x, -scale.y, 0.0f, 1.0f);
+	// upper line
+	glm::vec3 u_min = to_world * glm::vec4(-scale.x, scale.y, 0.0f, 1.0f);
+	glm::vec3 u_max = to_world * glm::vec4(scale.x, scale.y, 0.0f, 1.0f);
+	// bottom line
+	glm::vec3 d_min = to_world * glm::vec4(-scale.x, -scale.y, 0.0f, 1.0f);
+	glm::vec3 d_max = to_world * glm::vec4(scale.x, -scale.y, 0.0f, 1.0f);
+	*/
 
 	
 	std::vector<PlayMode::line_segment> lines = {line_segment(glm::vec2(l_min.x, l_min.y), glm::vec2(l_max.x, l_max.y)),
