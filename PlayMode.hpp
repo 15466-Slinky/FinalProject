@@ -104,10 +104,10 @@ struct PlayMode : Mode {
 	Scene::Transform* cat_tail = nullptr;
 	
 	/*
-	Function: get_upper_line
-	Input: pointer to platform
-	Output: pairs of two end points of the platform's uppersurface line
+	Function: get_lines
+	Input: pointer to the platform
+	Output: line segment vector: {left line, right line, upper line, bottom line}
 	*/
-	line_segment get_upper_line(Scene::Transform* platform);
+	std::vector<line_segment> get_lines(Scene::Transform* platform);
 	
 };

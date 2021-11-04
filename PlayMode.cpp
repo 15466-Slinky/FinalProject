@@ -77,7 +77,13 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	tail_vel = glm::vec2(0.0f, 0.0f);
 
 	for(auto p : platforms) {
-		line_segments.emplace_back(get_upper_line(p));
+		std::vector<PlayMode::line_segment> lines = get_lines(p);
+		assert(lines.size() == 4);
+		
+		line_segments.emplace_back(lines[0]);	// left
+		line_segments.emplace_back(lines[1]);	// right
+		line_segments.emplace_back(lines[2]);	// up
+		line_segments.emplace_back(lines[3]);	// bottom
 	}
 
 	// get pointer to camera
@@ -370,6 +376,7 @@ PlayMode::intersection PlayMode::get_capsule_collision(PlayMode::circle c, PlayM
 
 	//test the line segment first
 	//project point onto line segment: https://stackoverflow.com/questions/10301001/perpendicular-on-a-line-segment-from-a-given-point
+
 	float t = ((point.x - start.x) * (end.x - start.x) + (point.y - start.y) * (end.y - start.y)) / (powf(end.x - start.x, 2) + powf(end.y - start.y, 2));
 	if (t >= 0.0f && t <= 1.0f) {
 		glm::vec2 projection = start + t * (end - start);
@@ -402,17 +409,33 @@ PlayMode::intersection PlayMode::get_capsule_collision(PlayMode::circle c, PlayM
 }
 
 // TODO: load all surface line segment, use local_to_world to handle rotated platform
-PlayMode::line_segment PlayMode::get_upper_line(Scene::Transform* platform){
+std::vector<PlayMode::line_segment> PlayMode::get_lines(Scene::Transform* platform){
 	// z component is always 0
 	// +y is up, +x is right
 	
 	glm::vec3 position = platform->position;
 	glm::vec3 scale = platform->scale;
+	glm::mat4x3 to_world = platform->make_local_to_world();
+
+	// left line
+	glm::vec3 l_min = to_world * glm::vec4(position.x - scale.x, position.y + scale.y, 0.0f, 1.0f);
+	glm::vec3 l_max = to_world * glm::vec4(position.x - scale.x, position.y - scale.y, 0.0f, 1.0f);
+	// right line
+	glm::vec3 r_min = to_world * glm::vec4(position.x + scale.x, position.y + scale.y, 0.0f, 1.0f);
+	glm::vec3 r_max = to_world * glm::vec4(position.x + scale.x, position.y - scale.y, 0.0f, 1.0f);
+	// upper line
+	glm::vec3 u_min = to_world * glm::vec4(position.x - scale.x, position.y + scale.y, 0.0f, 1.0f);
+	glm::vec3 u_max = to_world * glm::vec4(position.x + scale.x, position.y + scale.y, 0.0f, 1.0f);
+	// bottom line
+	glm::vec3 d_min = to_world * glm::vec4(position.x - scale.x, position.y - scale.y, 0.0f, 1.0f);
+	glm::vec3 d_max = to_world * glm::vec4(position.x + scale.x, position.y - scale.y, 0.0f, 1.0f);
+
 	
-	glm::vec2 min = glm::vec2(position.x - scale.x, position.y + scale.y);	//TODO: check the actual position return when test run
-	glm::vec2 max = glm::vec2(position.x + scale.x, position.y + scale.y);
+	std::vector<PlayMode::line_segment> lines = {line_segment(glm::vec2(l_min.x, l_min.y), glm::vec2(l_max.x, l_max.y)),
+												line_segment(glm::vec2(r_min.x, r_min.y), glm::vec2(r_max.x, r_max.y)),
+												line_segment(glm::vec2(u_min.x, u_min.y), glm::vec2(u_max.x, u_max.y)),
+												line_segment(glm::vec2(d_min.x, d_min.y), glm::vec2(d_max.x, d_max.y)),
+												};
 	
-	PlayMode::line_segment line(min, max);
-	
-	return line;
+	return lines;
 }
