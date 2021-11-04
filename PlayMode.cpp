@@ -430,7 +430,7 @@ std::vector<PlayMode::line_segment> PlayMode::get_lines(Scene::Transform* platfo
 	
 	// left line
 	glm::vec3 l_min = platform->rotation * glm::vec3(-scale.x, scale.y, 0.0f) + position;
-	glm::vec3 l_max = platform->rotation * glm::vec3(-scale.x, scale.y, 0.0f) + position;
+	glm::vec3 l_max = platform->rotation * glm::vec3(-scale.x, -scale.y, 0.0f) + position;
 	
 	// right line
 	glm::vec3 r_min = platform->rotation * glm::vec3(scale.x, scale.y, 0.0f) + position;
