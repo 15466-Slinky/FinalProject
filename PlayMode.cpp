@@ -130,6 +130,10 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.downs += 1;
 			down.pressed = true;
 			return true;
+		} else if (evt.key.keysym.sym == SDLK_SPACE) {
+			space.downs += 1;
+			space.pressed = true;
+			return true;
 		} else if (evt.key.keysym.sym == SDLK_q) {
 			if (grab_ledge(tail_pos, 1 + grab_radius)) {
 				fixed_tail = !fixed_tail;
@@ -153,6 +157,9 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_s || evt.key.keysym.sym == SDLK_DOWN) {
 			down.pressed = false;
+			return true;
+		}else if (evt.key.keysym.sym == SDLK_SPACE) {
+			space.pressed = false;
 			return true;
 		}
 	}
@@ -235,6 +242,8 @@ void PlayMode::update(float elapsed) {
 	head_vel.y -= elapsed * GRAVITY;
 	tail_vel.y -= elapsed * GRAVITY;
 	
+	playerlength = space.pressed ? 10.f : 5.0f;
+
 	if (!fixed_head && !fixed_tail) {
 		free_movement(elapsed);
 	} else if (fixed_head && fixed_tail) {
@@ -260,12 +269,16 @@ void PlayMode::update(float elapsed) {
 	// Air resistance, or surface friction if the segment is sitting on the floor
 	//head_vel *= head_grounded ? .9f : .99f;
 	//tail_vel *= tail_grounded ? .9f : .99f; 
+	// Air resistance only
+	head_vel *= .99f;
+	tail_vel *= .99f; 
 
 	//reset button press counters:
 	left.downs = 0;
 	right.downs = 0;
 	up.downs = 0;
 	down.downs = 0;
+	space.downs = 0;
 
 }
 
