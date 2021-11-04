@@ -100,7 +100,8 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	camera -> fovy = glm::radians(35.0f);		// adjust fov
 	//camera -> fovy = glm::radians(60.0f);
 	//camera -> near = 0.01f;
-	
+	camera_pos.x = camera->transform->position.x;
+	camera_pos.y = camera->transform->position.y;
 }
 
 PlayMode::~PlayMode() {
@@ -206,6 +207,9 @@ void PlayMode::update(float elapsed) {
 	head_pos += head_vel * elapsed;
 	tail_pos += tail_vel * elapsed;
 
+	//update camera
+	update_camera(elapsed);
+
 	// Check collision with the walls and adjust the velocities accordingly
 	collide_segments(head_pos, head_vel, 1, head_grounded);
 	collide_segments(tail_pos, tail_vel, 1, tail_grounded);
@@ -262,7 +266,9 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	cat_tail->position.x = tail_pos.x;
 	cat_tail->position.y = tail_pos.y;
 	
-	//draw scene
+	//draw scene and update camera
+	camera->transform->position.x = camera_pos.x;
+	camera->transform->position.y = camera_pos.y;
 	camera->aspect = float(drawable_size.x) / float(drawable_size.y);
 
 	//set up light type and position for lit_color_texture_program:
@@ -432,6 +438,11 @@ std::vector<PlayMode::line_segment> PlayMode::get_lines(const Scene::Transform* 
 												};
 	
 	return lines;
+}
+
+void PlayMode::update_camera(float elapsed) {
+	glm::vec2 camera_dir = head_pos - camera_pos;
+	camera_pos += camera_dir * elapsed * CAMERA_SPEED;
 }
 
 void PlayMode::collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded) {

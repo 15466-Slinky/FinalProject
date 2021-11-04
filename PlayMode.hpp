@@ -9,6 +9,7 @@
 
 #define PLAYER_SPEED 10.f
 #define JUMP_SPEED 10.f
+#define CAMERA_SPEED 9.f
 #define GRAVITY 10.f
 #define DEATH_BOUND -50.f
 
@@ -58,6 +59,7 @@ struct PlayMode : Mode {
 	std::vector<intersection> get_collisions(const circle &c, const std::vector<line_segment> &ls);
 	intersection get_capsule_collision(const circle &c, const line_segment &l, bool &is_hit);
 	std::vector<line_segment> get_lines(const Scene::Transform* platform);
+	void update_camera(float elapsed);
 
 	//----- movement updates -----
 	void collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded);
@@ -97,6 +99,9 @@ struct PlayMode : Mode {
 	float playerlength = 5.0f; //length of spring
 	float k = 20.0f; //spring constant
 	float grab_radius = 0.5f; //grabbable radius
+
+	//camera motion
+	glm::vec2 camera_pos;
 	
 	//scene
 	Scene scene;
