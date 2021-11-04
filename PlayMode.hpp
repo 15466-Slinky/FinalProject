@@ -10,6 +10,7 @@
 #define PLAYER_SPEED 10.f
 #define JUMP_SPEED 10.f
 #define GRAVITY 10.f
+#define DEATH_BOUND -50.f
 
 struct PlayMode : Mode {
 	PlayMode();
@@ -64,6 +65,7 @@ struct PlayMode : Mode {
 	void free_movement(float elapsed);
 	void fixed_head_movement(float elapsed);
 	void fixed_tail_movement(float elapsed);
+	void respawn();
 
 	//----- game state -----
 	//terrain:
