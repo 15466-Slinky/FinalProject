@@ -106,12 +106,6 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 PlayMode::~PlayMode() {
 }
 
-bool PlayMode::grab_ledge(glm::vec2& pos, float radius) {
-	circle c(pos, radius);
-	std::vector<intersection> hits = get_collisions(c, line_segments);
-	return (!hits.empty());
-}
-
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
 
 	if (evt.type == SDL_KEYDOWN) {
@@ -167,94 +161,6 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		}
 	}
 	return false;
-}
-
-void PlayMode::free_movement(float elapsed) {
-	// If the head is grounded, just stay still
-	if(head_grounded) {
-		head_vel.x = 0;
-		head_vel.y = 0;
-	}
-
-	if (left.pressed) head_vel.x = -PLAYER_SPEED;
-	else if (right.pressed) head_vel.x = PLAYER_SPEED;
-	if (up.pressed && head_grounded) 
-	{	
-		head_vel.y = JUMP_SPEED;
-		tail_vel.y += JUMP_SPEED / 2;
-	}
-
-
-	glm::vec2 disp = (head_pos - tail_pos);
-	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
-	glm::vec2 spring_force = glm::normalize(disp) * dist * k;
-	tail_vel += spring_force * elapsed;
-	
-	// Only pull on the head if it's not standing somewhere
-	//if(!head_grounded)
-	//	head_vel -= spring_force * elapsed;
-}
-
-void PlayMode::fixed_head_movement(float elapsed) {
-	head_vel.x = 0;
-	head_vel.y = 0;
-
-	// If the tail is grounded, just stay still
-	if(tail_grounded) {
-		tail_vel.x = 0;
-		tail_vel.y = 0;
-	}
-	//tail_vel.x = 0;
-	//tail_vel.y = 0;
-	if (left.pressed) tail_vel.x = -PLAYER_SPEED;
-	else if (right.pressed) tail_vel.x = PLAYER_SPEED;
-	if (up.pressed && tail_grounded) tail_vel.y = JUMP_SPEED;
-
-	glm::vec2 disp = (head_pos - tail_pos);
-	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
-	glm::vec2 spring_force = glm::normalize(disp) * dist * k;
-	tail_vel += spring_force * elapsed;
-}
-
-void PlayMode::fixed_tail_movement(float elapsed) {
-	//head_vel.x = 0;
-	//head_vel.y = 0;
-	tail_vel.x = 0;
-	tail_vel.y = 0;
-	if (left.pressed) head_vel.x = -PLAYER_SPEED;
-	else if (right.pressed) head_vel.x = PLAYER_SPEED;
-	if (up.pressed && head_grounded) head_vel.y = JUMP_SPEED;
-
-	glm::vec2 disp = (head_pos - tail_pos);
-	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
-	glm::vec2 spring_force = glm::normalize(disp) * dist * k;
-	head_vel -= spring_force * elapsed;
-}
-
-void PlayMode::collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded) {
-	grounded = false;
-
-	for(line_segment &ls : line_segments) {
-		circle c(pos, radius);
-
-		bool is_hit = false;
-		intersection hit = get_capsule_collision(c, ls, is_hit);
-
-		if(is_hit) {
-			pos = hit.point_of_intersection;
-
-			// Project the velocity onto the normal, and subtract that component so
-			// vel is perpendicular
-			float d = glm::dot(hit.surface_normal, vel);
-			if (d > 0) d = 0;
-			vel -= hit.surface_normal * d;
-
-			if(hit.surface_normal.y > .5f) {
-				grounded = true;
-			}
-		}
-
-	}
 }
 
 void PlayMode::update(float elapsed) {
@@ -385,7 +291,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	GL_ERRORS();
 }
 
-std::vector<PlayMode::intersection> PlayMode::get_collisions(PlayMode::circle c, std::vector<PlayMode::line_segment> ls) {
+std::vector<PlayMode::intersection> PlayMode::get_collisions(const PlayMode::circle &c, const std::vector<PlayMode::line_segment> &ls) {
 	//https://stackoverflow.com/questions/1073336/circle-line-segment-collision-detection-algorithm
 	std::vector<PlayMode::intersection> collision_data; //vector of pairs of points of intersection and normals
 
@@ -442,7 +348,7 @@ std::vector<PlayMode::intersection> PlayMode::get_collisions(PlayMode::circle c,
 	return collision_data;
 }
 
-PlayMode::intersection PlayMode::get_capsule_collision(PlayMode::circle c, PlayMode::line_segment l, bool &is_hit) {
+PlayMode::intersection PlayMode::get_capsule_collision(const PlayMode::circle &c, const PlayMode::line_segment &l, bool &is_hit) {
 	glm::vec2 point = c.center;
 	float radius = c.radius;
 	glm::vec2 start = l.ep1;
@@ -485,7 +391,7 @@ PlayMode::intersection PlayMode::get_capsule_collision(PlayMode::circle c, PlayM
 }
 
 // TODO: load all surface line segment, use local_to_world to handle rotated platform
-std::vector<PlayMode::line_segment> PlayMode::get_lines(Scene::Transform* platform){
+std::vector<PlayMode::line_segment> PlayMode::get_lines(const Scene::Transform* platform){
 	// z component is always 0
 	// +y is up, +x is right
 	
@@ -532,4 +438,98 @@ std::vector<PlayMode::line_segment> PlayMode::get_lines(Scene::Transform* platfo
 												};
 	
 	return lines;
+}
+
+void PlayMode::collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded) {
+	grounded = false;
+
+	for(line_segment &ls : line_segments) {
+		circle c(pos, radius);
+
+		bool is_hit = false;
+		intersection hit = get_capsule_collision(c, ls, is_hit);
+
+		if(is_hit) {
+			pos = hit.point_of_intersection;
+
+			// Project the velocity onto the normal, and subtract that component so
+			// vel is perpendicular
+			float d = glm::dot(hit.surface_normal, vel);
+			if (d > 0) d = 0;
+			vel -= hit.surface_normal * d;
+
+			if(hit.surface_normal.y > .5f) {
+				grounded = true;
+			}
+		}
+
+	}
+}
+
+bool PlayMode::grab_ledge(glm::vec2& pos, float radius) {
+	circle c(pos, radius);
+	std::vector<intersection> hits = get_collisions(c, line_segments);
+	return (!hits.empty());
+}
+
+void PlayMode::free_movement(float elapsed) {
+	// If the head is grounded, just stay still
+	if(head_grounded) {
+		head_vel.x = 0;
+		head_vel.y = 0;
+	}
+
+	if (left.pressed) head_vel.x = -PLAYER_SPEED;
+	else if (right.pressed) head_vel.x = PLAYER_SPEED;
+	if (up.pressed && head_grounded) 
+	{	
+		head_vel.y = JUMP_SPEED;
+		tail_vel.y += JUMP_SPEED / 2;
+	}
+
+
+	glm::vec2 disp = (head_pos - tail_pos);
+	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
+	glm::vec2 spring_force = glm::normalize(disp) * dist * k;
+	tail_vel += spring_force * elapsed;
+	
+	// Only pull on the head if it's not standing somewhere
+	//if(!head_grounded)
+	//	head_vel -= spring_force * elapsed;
+}
+
+void PlayMode::fixed_head_movement(float elapsed) {
+	head_vel.x = 0;
+	head_vel.y = 0;
+
+	// If the tail is grounded, just stay still
+	if(tail_grounded) {
+		tail_vel.x = 0;
+		tail_vel.y = 0;
+	}
+	//tail_vel.x = 0;
+	//tail_vel.y = 0;
+	if (left.pressed) tail_vel.x = -PLAYER_SPEED;
+	else if (right.pressed) tail_vel.x = PLAYER_SPEED;
+	if (up.pressed && tail_grounded) tail_vel.y = JUMP_SPEED;
+
+	glm::vec2 disp = (head_pos - tail_pos);
+	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
+	glm::vec2 spring_force = glm::normalize(disp) * dist * k;
+	tail_vel += spring_force * elapsed;
+}
+
+void PlayMode::fixed_tail_movement(float elapsed) {
+	//head_vel.x = 0;
+	//head_vel.y = 0;
+	tail_vel.x = 0;
+	tail_vel.y = 0;
+	if (left.pressed) head_vel.x = -PLAYER_SPEED;
+	else if (right.pressed) head_vel.x = PLAYER_SPEED;
+	if (up.pressed && head_grounded) head_vel.y = JUMP_SPEED;
+
+	glm::vec2 disp = (head_pos - tail_pos);
+	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
+	glm::vec2 spring_force = glm::normalize(disp) * dist * k;
+	head_vel -= spring_force * elapsed;
 }

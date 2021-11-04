@@ -20,7 +20,7 @@ struct PlayMode : Mode {
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
-	//helper functions and typedefs
+	//----- helper structs -----
 	struct line_segment {
 		glm::vec2 ep1;
 		glm::vec2 ep2;
@@ -53,21 +53,10 @@ struct PlayMode : Mode {
 		}
 	};
 
-	/*
-	Function: get_collisions
-	Input: circle c, vector of line segments ls
-	Output: vector of intersections corresponding to line segments which collide
-	*/
-	std::vector<intersection> get_collisions(circle c, std::vector<line_segment> ls);
-
-	/*
-	Function: get_capsule_collision
-	Input: circle c, line segment l
-	Output: an "intersection" where the point of intersection is the closest exterior point instead.
-			if we do not collide with the capsule zone, then the point of intersection
-			and the surface normals are vectors of 0.0f
-	*/
-	intersection get_capsule_collision(circle c, line_segment l, bool &is_hit);
+	//----- helper functions ----- see Trello documentation for details
+	std::vector<intersection> get_collisions(const circle &c, const std::vector<line_segment> &ls);
+	intersection get_capsule_collision(const circle &c, const line_segment &l, bool &is_hit);
+	std::vector<line_segment> get_lines(const Scene::Transform* platform);
 
 	//----- movement updates -----
 	void collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded);
@@ -77,6 +66,7 @@ struct PlayMode : Mode {
 	void fixed_tail_movement(float elapsed);
 
 	//----- game state -----
+	//terrain:
 	std::vector<line_segment> line_segments;
 
 	//input tracking:
@@ -115,13 +105,5 @@ struct PlayMode : Mode {
 		
 	Scene::Transform* doughnut = nullptr;
 	Scene::Transform* cat_head = nullptr;
-	Scene::Transform* cat_tail = nullptr;
-	
-	/*
-	Function: get_lines
-	Input: pointer to the platform
-	Output: line segment vector: {left line, right line, upper line, bottom line}
-	*/
-	std::vector<line_segment> get_lines(Scene::Transform* platform);
-	
+	Scene::Transform* cat_tail = nullptr;	
 };
