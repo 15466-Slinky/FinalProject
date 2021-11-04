@@ -76,6 +76,9 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	head_vel = glm::vec2(0.0f, 0.0f);
 	tail_vel = glm::vec2(0.0f, 0.0f);
 
+	head_grounded = false;
+	tail_grounded = false;
+
 	for(auto p : platforms) {
 		std::vector<PlayMode::line_segment> lines = get_lines(p);
 		assert(lines.size() == 4);
@@ -151,8 +154,7 @@ void PlayMode::free_movement(float elapsed) {
 	//head_vel.y = 0;
 	if (left.pressed) head_vel.x = -PLAYER_SPEED;
 	else if (right.pressed) head_vel.x = PLAYER_SPEED;
-	if (up.pressed) head_vel.y = PLAYER_SPEED;
-	else if (down.pressed) head_vel.y = -PLAYER_SPEED;
+	if (up.pressed && head_grounded) head_vel.y = JUMP_SPEED;
 
 	glm::vec2 disp = (head_pos - tail_pos);
 	float dist = glm::distance(head_pos, tail_pos) - playerlength;
@@ -168,8 +170,7 @@ void PlayMode::fixed_head_movement(float elapsed) {
 	//tail_vel.y = 0;
 	if (left.pressed) tail_vel.x = -PLAYER_SPEED;
 	else if (right.pressed) tail_vel.x = PLAYER_SPEED;
-	if (up.pressed) tail_vel.y = PLAYER_SPEED;
-	else if (down.pressed) tail_vel.y = -PLAYER_SPEED;
+	if (up.pressed && tail_grounded) tail_vel.y = JUMP_SPEED;
 
 	glm::vec2 dist = (head_pos - tail_pos) - playerlength;
 	glm::vec2 spring_force = dist * k;
@@ -183,15 +184,16 @@ void PlayMode::fixed_tail_movement(float elapsed) {
 	tail_vel.y = 0;
 	if (left.pressed) head_vel.x = -PLAYER_SPEED;
 	else if (right.pressed) head_vel.x = PLAYER_SPEED;
-	if (up.pressed) head_vel.y = PLAYER_SPEED;
-	else if (down.pressed) head_vel.y = -PLAYER_SPEED;
+	if (up.pressed && head_grounded) head_vel.y = JUMP_SPEED;
 
 	glm::vec2 dist = (head_pos - tail_pos) - playerlength;
 	glm::vec2 spring_force = dist * k;
 	head_vel -= spring_force * elapsed;
 }
 
-void PlayMode::collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius) {
+void PlayMode::collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded) {
+	grounded = false;
+
 	for(line_segment &ls : line_segments) {
 		circle c(pos, radius);
 
@@ -199,19 +201,27 @@ void PlayMode::collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius) {
 		intersection hit = get_capsule_collision(c, ls, is_hit);
 
 		if(is_hit) {
-			printf("Hit!\n");
 			pos = hit.point_of_intersection;
 
+			// Project the velocity onto the normal, and subtract that component so
+			// vel is perpendicular
 			float d = glm::dot(hit.surface_normal, vel);
 			if (d > 0) d = 0;
-
 			vel -= hit.surface_normal * d;
+
+			if(hit.surface_normal.y > .5f) {
+				grounded = true;
+			}
 		}
 
 	}
 }
 
 void PlayMode::update(float elapsed) {
+
+	// Apply gravity
+	head_vel.y -= elapsed * GRAVITY;
+	tail_vel.y -= elapsed * GRAVITY;
 	
 	if (!fixed_head && !fixed_tail) {
 		free_movement(elapsed);
@@ -227,19 +237,17 @@ void PlayMode::update(float elapsed) {
 		fixed_tail_movement(elapsed);
 	}
 
-	// Apply gravity
-	head_vel.y -= elapsed * 9.8f;
-	tail_vel.y -= elapsed * 9.8f;
-
 	// Do phyics update
 	head_pos += head_vel * elapsed;
 	tail_pos += tail_vel * elapsed;
-	tail_vel *= .99f; //velocity damping
-	head_vel *= .99f;
 
 	// Check collision with the walls and adjust the velocities accordingly
-	collide_segments(head_pos, head_vel, 1);
-	collide_segments(tail_pos, tail_vel, 1);
+	collide_segments(head_pos, head_vel, 1, head_grounded);
+	collide_segments(tail_pos, tail_vel, 1, tail_grounded);
+
+	// Air resistance, or surface friction if the segment is sitting on the floor
+	//head_vel *= head_grounded ? .9f : .99f;
+	//tail_vel *= tail_grounded ? .9f : .99f; 
 
 	//reset button press counters:
 	left.downs = 0;

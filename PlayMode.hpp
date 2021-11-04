@@ -8,6 +8,8 @@
 #include <deque>
 
 #define PLAYER_SPEED 10.f
+#define JUMP_SPEED 10.f
+#define GRAVITY 10.f
 
 struct PlayMode : Mode {
 	PlayMode();
@@ -68,7 +70,7 @@ struct PlayMode : Mode {
 	intersection get_capsule_collision(circle c, line_segment l, bool &is_hit);
 
 	//----- movement updates -----
-	void collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius);
+	void collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded);
 	void free_movement(float elapsed);
 	void fixed_head_movement(float elapsed);
 	void fixed_tail_movement(float elapsed);
@@ -89,6 +91,9 @@ struct PlayMode : Mode {
 	glm::vec2 head_vel;
 	glm::vec2 tail_pos;
 	glm::vec2 tail_vel;
+
+	bool head_grounded;
+	bool tail_grounded;
 	float playerlength = 5.0f; //length of spring
 	float k = 4.0f; //spring constant
 	
