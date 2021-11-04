@@ -164,24 +164,18 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::update(float elapsed) {
-	if(head_pos.y < -50.f && tail_pos.y < -50.f) {
-		head_pos = head_start;
-		head_vel = glm::vec2(0.f, 0.f);
-		tail_pos = head_start;
-		tail_pos.x -= 1;
-		tail_vel = glm::vec2(0.f, 0.f);
-	}
-
+	if (head_pos.y < DEATH_BOUND && tail_pos.y < DEATH_BOUND)
+		respawn();
 
 	// Apply gravity
 	head_vel.y -= elapsed * GRAVITY;
 	tail_vel.y -= elapsed * GRAVITY;
 	
 	playerlength = space.pressed ? 20.f : 1.0f;
-	if(space.pressed) {
+	if (space.pressed) {
 		stretched = true;
 	}
-	else if(stretched && glm::distance(head_pos, tail_pos) <= 4.0f) {
+	else if (stretched && glm::distance(head_pos, tail_pos) <= 4.0f) {
 		stretched = false;
 
 		fixed_head = false;
@@ -228,7 +222,6 @@ void PlayMode::update(float elapsed) {
 	up.downs = 0;
 	down.downs = 0;
 	space.downs = 0;
-
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
@@ -532,4 +525,12 @@ void PlayMode::fixed_tail_movement(float elapsed) {
 	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
 	glm::vec2 spring_force = glm::normalize(disp) * dist * k;
 	head_vel -= spring_force * elapsed;
+}
+
+void PlayMode::respawn() {
+	head_pos = head_start;
+	head_vel = glm::vec2(0.f, 0.f);
+	tail_pos = head_start;
+	tail_pos.x -= 1.f; //to give space between head and tail
+	tail_vel = glm::vec2(0.f, 0.f);
 }
