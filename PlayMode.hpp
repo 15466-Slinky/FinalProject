@@ -71,6 +71,7 @@ struct PlayMode : Mode {
 
 	//----- movement updates -----
 	void collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded);
+	bool grab_ledge(glm::vec2& pos, float radius);
 	void free_movement(float elapsed);
 	void fixed_head_movement(float elapsed);
 	void fixed_tail_movement(float elapsed);
@@ -96,6 +97,7 @@ struct PlayMode : Mode {
 	bool tail_grounded;
 	float playerlength = 5.0f; //length of spring
 	float k = 4.0f; //spring constant
+	float grab_radius = 0.5f; //grabbable radius
 	
 	//scene
 	Scene scene;
