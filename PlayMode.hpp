@@ -95,8 +95,12 @@ struct PlayMode : Mode {
 
 	bool head_grounded;
 	bool tail_grounded;
+
+	// Indicates if the player has extended the player size, and the player hasn't yet compressed back to actual size
+	bool stretched = false;
+
 	float playerlength = 5.0f; //length of spring
-	float k = 4.0f; //spring constant
+	float k = 10.0f; //spring constant
 	float grab_radius = 0.5f; //grabbable radius
 	
 	//scene

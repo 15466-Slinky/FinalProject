@@ -175,7 +175,12 @@ void PlayMode::free_movement(float elapsed) {
 
 	if (left.pressed) head_vel.x = -PLAYER_SPEED;
 	else if (right.pressed) head_vel.x = PLAYER_SPEED;
-	if (up.pressed && head_grounded) head_vel.y = JUMP_SPEED;
+	if (up.pressed && head_grounded) 
+	{	
+		head_vel.y = JUMP_SPEED;
+		tail_vel.y += JUMP_SPEED / 2;
+	}
+
 
 	glm::vec2 disp = (head_pos - tail_pos);
 	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
@@ -190,6 +195,12 @@ void PlayMode::free_movement(float elapsed) {
 void PlayMode::fixed_head_movement(float elapsed) {
 	head_vel.x = 0;
 	head_vel.y = 0;
+
+	// If the tail is grounded, just stay still
+	if(tail_grounded) {
+		tail_vel.x = 0;
+		tail_vel.y = 0;
+	}
 	//tail_vel.x = 0;
 	//tail_vel.y = 0;
 	if (left.pressed) tail_vel.x = -PLAYER_SPEED;
@@ -249,7 +260,20 @@ void PlayMode::update(float elapsed) {
 	head_vel.y -= elapsed * GRAVITY;
 	tail_vel.y -= elapsed * GRAVITY;
 	
-	playerlength = space.pressed ? 10.f : 2.0f;
+	playerlength = space.pressed ? 20.f : 1.0f;
+	if(space.pressed) {
+		stretched = true;
+	}
+	else if(stretched && glm::distance(head_pos, tail_pos) <= 4.0f) {
+		stretched = false;
+
+		fixed_head = false;
+		head_grounded = false;
+		head_vel += tail_vel;
+
+		printf("Recompressed %f\n", head_vel.x);
+	}
+
 
 	if (!fixed_head && !fixed_tail) {
 		free_movement(elapsed);
