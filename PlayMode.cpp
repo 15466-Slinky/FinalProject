@@ -103,6 +103,12 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 PlayMode::~PlayMode() {
 }
 
+bool PlayMode::grab_ledge(glm::vec2& pos, float radius) {
+	circle c(pos, radius);
+	std::vector<intersection> hits = get_collisions(c, line_segments);
+	return (!hits.empty());
+}
+
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
 
 	if (evt.type == SDL_KEYDOWN) {
@@ -125,10 +131,14 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.pressed = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_q) {
-			fixed_tail = !fixed_tail;
+			if (grab_ledge(tail_pos, 1 + grab_radius)) {
+				fixed_tail = !fixed_tail;
+			}
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_e) {
-			fixed_head = !fixed_head;
+			if (grab_ledge(head_pos, 1 + grab_radius)) {
+				fixed_head = !fixed_head;
+			}
 			return true;
 		}
 	} else if (evt.type == SDL_KEYUP) {
