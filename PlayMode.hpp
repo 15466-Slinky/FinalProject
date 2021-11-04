@@ -8,7 +8,7 @@
 #include <deque>
 
 #define PLAYER_SPEED 10.f
-#define JUMP_SPEED 20.f
+#define JUMP_SPEED 10.f
 #define GRAVITY 10.f
 
 struct PlayMode : Mode {
@@ -88,6 +88,9 @@ struct PlayMode : Mode {
 	bool fixed_tail = false;
 
 	// Player motion
+	glm::vec2 head_start;
+	glm::vec2 tail_start;
+
 	glm::vec2 head_pos;
 	glm::vec2 head_vel;
 	glm::vec2 tail_pos;

@@ -69,6 +69,9 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	
 	head_pos.x = cat_head->position.x;
 	head_pos.y = cat_head->position.y;
+
+	head_start = head_pos;
+	tail_start = tail_pos;
 	
 	tail_pos.x = cat_tail->position.x;
 	tail_pos.y = cat_tail->position.y;
@@ -255,6 +258,14 @@ void PlayMode::collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bo
 }
 
 void PlayMode::update(float elapsed) {
+	if(head_pos.y < -50.f && tail_pos.y < -50.f) {
+		head_pos = head_start;
+		head_vel = glm::vec2(0.f, 0.f);
+		tail_pos = head_start;
+		tail_pos.x -= 1;
+		tail_vel = glm::vec2(0.f, 0.f);
+	}
+
 
 	// Apply gravity
 	head_vel.y -= elapsed * GRAVITY;
