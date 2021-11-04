@@ -188,8 +188,8 @@ void PlayMode::free_movement(float elapsed) {
 	tail_vel += spring_force * elapsed;
 	
 	// Only pull on the head if it's not standing somewhere
-	if(!head_grounded)
-		head_vel -= spring_force * elapsed;
+	//if(!head_grounded)
+	//	head_vel -= spring_force * elapsed;
 }
 
 void PlayMode::fixed_head_movement(float elapsed) {
@@ -269,7 +269,8 @@ void PlayMode::update(float elapsed) {
 
 		fixed_head = false;
 		head_grounded = false;
-		head_vel += tail_vel;
+		head_vel += tail_vel * .5f;
+		tail_vel *= .5f;
 
 		printf("Recompressed %f\n", head_vel.x);
 	}

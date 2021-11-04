@@ -100,7 +100,7 @@ struct PlayMode : Mode {
 	bool stretched = false;
 
 	float playerlength = 5.0f; //length of spring
-	float k = 10.0f; //spring constant
+	float k = 20.0f; //spring constant
 	float grab_radius = 0.5f; //grabbable radius
 	
 	//scene
