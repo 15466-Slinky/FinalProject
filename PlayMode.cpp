@@ -148,8 +148,9 @@ void PlayMode::free_movement(float elapsed) {
 	if (up.pressed) head_vel.y = PLAYER_SPEED;
 	else if (down.pressed) head_vel.y = -PLAYER_SPEED;
 
-	glm::vec2 dist = (head_pos - tail_pos) - playerlength;
-	glm::vec2 spring_force = dist * k;
+	glm::vec2 disp = (head_pos - tail_pos);
+	float dist = glm::distance(head_pos, tail_pos) - playerlength;
+	glm::vec2 spring_force = glm::normalize(disp) * dist * k;
 	tail_vel += spring_force * elapsed;
 	head_vel -= spring_force * elapsed;
 }
@@ -184,6 +185,26 @@ void PlayMode::fixed_tail_movement(float elapsed) {
 	head_vel -= spring_force * elapsed;
 }
 
+void PlayMode::collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius) {
+	for(line_segment &ls : line_segments) {
+		circle c(pos, radius);
+
+		bool is_hit = false;
+		intersection hit = get_capsule_collision(c, ls, is_hit);
+
+		if(is_hit) {
+			printf("Hit!\n");
+			pos = hit.point_of_intersection;
+
+			float d = glm::dot(hit.surface_normal, vel);
+			if (d > 0) d = 0;
+
+			vel -= hit.surface_normal * d;
+		}
+
+	}
+}
+
 void PlayMode::update(float elapsed) {
 	
 	if (!fixed_head && !fixed_tail) {
@@ -200,19 +221,19 @@ void PlayMode::update(float elapsed) {
 		fixed_tail_movement(elapsed);
 	}
 
-	// Collisions
-	circle head_circle(head_pos, 1.f);
-	auto collisions = get_collisions(head_circle, line_segments);
-
-	for (intersection& i : collisions) {
-		printf("%f %f \t %f %f\n", i.point_of_intersection.x, i.point_of_intersection.y, i.surface_normal.x, i.surface_normal.y);
-	}
+	// Apply gravity
+	head_vel.y -= elapsed * 9.8f;
+	tail_vel.y -= elapsed * 9.8f;
 
 	// Do phyics update
 	head_pos += head_vel * elapsed;
 	tail_pos += tail_vel * elapsed;
 	tail_vel *= .99f; //velocity damping
 	head_vel *= .99f;
+
+	// Check collision with the walls and adjust the velocities accordingly
+	collide_segments(head_pos, head_vel, 1);
+	collide_segments(tail_pos, tail_vel, 1);
 
 	//reset button press counters:
 	left.downs = 0;
@@ -339,11 +360,13 @@ std::vector<PlayMode::intersection> PlayMode::get_collisions(PlayMode::circle c,
 	return collision_data;
 }
 
-PlayMode::intersection PlayMode::get_capsule_collision(PlayMode::circle c, PlayMode::line_segment l) {
+PlayMode::intersection PlayMode::get_capsule_collision(PlayMode::circle c, PlayMode::line_segment l, bool &is_hit) {
 	glm::vec2 point = c.center;
 	float radius = c.radius;
 	glm::vec2 start = l.ep1;
 	glm::vec2 end = l.ep2;
+
+	is_hit = true;
 
 	//test the line segment first
 	//project point onto line segment: https://stackoverflow.com/questions/10301001/perpendicular-on-a-line-segment-from-a-given-point
@@ -374,6 +397,7 @@ PlayMode::intersection PlayMode::get_capsule_collision(PlayMode::circle c, PlayM
 		return PlayMode::intersection(closest_exterior_point, surface_normal);
 	}
 
+	is_hit = false;
 	return PlayMode::intersection(glm::vec2(0.0f), glm::vec2(0.0f)); //point isn't within the capsule
 }
 

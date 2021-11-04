@@ -65,9 +65,10 @@ struct PlayMode : Mode {
 			if we do not collide with the capsule zone, then the point of intersection
 			and the surface normals are vectors of 0.0f
 	*/
-	intersection get_capsule_collision(circle c, line_segment l);
+	intersection get_capsule_collision(circle c, line_segment l, bool &is_hit);
 
 	//----- movement updates -----
+	void collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius);
 	void free_movement(float elapsed);
 	void fixed_head_movement(float elapsed);
 	void fixed_tail_movement(float elapsed);
