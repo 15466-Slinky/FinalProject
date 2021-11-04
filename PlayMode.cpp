@@ -172,8 +172,9 @@ void PlayMode::fixed_head_movement(float elapsed) {
 	else if (right.pressed) tail_vel.x = PLAYER_SPEED;
 	if (up.pressed && tail_grounded) tail_vel.y = JUMP_SPEED;
 
-	glm::vec2 dist = (head_pos - tail_pos) - playerlength;
-	glm::vec2 spring_force = dist * k;
+	glm::vec2 disp = (head_pos - tail_pos);
+	float dist = glm::distance(head_pos, tail_pos) - playerlength;
+	glm::vec2 spring_force = glm::normalize(disp) * dist * k;
 	tail_vel += spring_force * elapsed;
 }
 
@@ -186,8 +187,9 @@ void PlayMode::fixed_tail_movement(float elapsed) {
 	else if (right.pressed) head_vel.x = PLAYER_SPEED;
 	if (up.pressed && head_grounded) head_vel.y = JUMP_SPEED;
 
-	glm::vec2 dist = (head_pos - tail_pos) - playerlength;
-	glm::vec2 spring_force = dist * k;
+	glm::vec2 disp = (head_pos - tail_pos);
+	float dist = glm::distance(head_pos, tail_pos) - playerlength;
+	glm::vec2 spring_force = glm::normalize(disp) * dist * k;
 	head_vel -= spring_force * elapsed;
 }
 
