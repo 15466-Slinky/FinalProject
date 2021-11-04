@@ -8,7 +8,7 @@
 #include <deque>
 
 #define PLAYER_SPEED 10.f
-#define JUMP_SPEED 10.f
+#define JUMP_SPEED 20.f
 #define GRAVITY 10.f
 
 struct PlayMode : Mode {

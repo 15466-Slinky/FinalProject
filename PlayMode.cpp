@@ -157,17 +157,24 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::free_movement(float elapsed) {
-	//head_vel.x = 0;
-	//head_vel.y = 0;
+	// If the head is grounded, just stay still
+	if(head_grounded) {
+		head_vel.x = 0;
+		head_vel.y = 0;
+	}
+
 	if (left.pressed) head_vel.x = -PLAYER_SPEED;
 	else if (right.pressed) head_vel.x = PLAYER_SPEED;
 	if (up.pressed && head_grounded) head_vel.y = JUMP_SPEED;
 
 	glm::vec2 disp = (head_pos - tail_pos);
-	float dist = glm::distance(head_pos, tail_pos) - playerlength;
+	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
 	glm::vec2 spring_force = glm::normalize(disp) * dist * k;
 	tail_vel += spring_force * elapsed;
-	head_vel -= spring_force * elapsed;
+	
+	// Only pull on the head if it's not standing somewhere
+	if(!head_grounded)
+		head_vel -= spring_force * elapsed;
 }
 
 void PlayMode::fixed_head_movement(float elapsed) {
@@ -180,7 +187,7 @@ void PlayMode::fixed_head_movement(float elapsed) {
 	if (up.pressed && tail_grounded) tail_vel.y = JUMP_SPEED;
 
 	glm::vec2 disp = (head_pos - tail_pos);
-	float dist = glm::distance(head_pos, tail_pos) - playerlength;
+	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
 	glm::vec2 spring_force = glm::normalize(disp) * dist * k;
 	tail_vel += spring_force * elapsed;
 }
@@ -195,7 +202,7 @@ void PlayMode::fixed_tail_movement(float elapsed) {
 	if (up.pressed && head_grounded) head_vel.y = JUMP_SPEED;
 
 	glm::vec2 disp = (head_pos - tail_pos);
-	float dist = glm::distance(head_pos, tail_pos) - playerlength;
+	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
 	glm::vec2 spring_force = glm::normalize(disp) * dist * k;
 	head_vel -= spring_force * elapsed;
 }
@@ -232,7 +239,7 @@ void PlayMode::update(float elapsed) {
 	head_vel.y -= elapsed * GRAVITY;
 	tail_vel.y -= elapsed * GRAVITY;
 	
-	playerlength = space.pressed ? 10.f : 5.0f;
+	playerlength = space.pressed ? 10.f : 2.0f;
 
 	if (!fixed_head && !fixed_tail) {
 		free_movement(elapsed);
