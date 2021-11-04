@@ -164,6 +164,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::update(float elapsed) {
+	//respawn if player fell to their deaths
 	if (head_pos.y < DEATH_BOUND && tail_pos.y < DEATH_BOUND)
 		respawn();
 
