@@ -55,11 +55,36 @@ struct PlayMode : Mode {
 		}
 	};
 
+	struct checkpoint {
+		bool reached;
+		glm::vec2 position;
+
+		checkpoint() {
+			reached = false;
+			position = glm::vec2(0.f);
+		}
+		checkpoint(glm::vec2 position_) {
+			reached = false;
+			position = position_;
+		}
+
+		bool operator < (const checkpoint& c) const {
+			return position.x < c.position.x;
+		}
+	};
+
 	//----- helper functions ----- see Trello documentation for details
+	//collisions
 	std::vector<intersection> get_collisions(const circle &c, const std::vector<line_segment> &ls);
 	intersection get_capsule_collision(const circle &c, const line_segment &l, bool &is_hit);
 	std::vector<line_segment> get_lines(const Scene::Transform* platform);
+
+	//camera behavior
 	void update_camera(float elapsed);
+
+	//checkpoint behavior
+	void sort_checkpoints();
+	void update_checkpoint();
 
 	//----- movement updates -----
 	void collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded);
@@ -71,7 +96,13 @@ struct PlayMode : Mode {
 
 	//----- game state -----
 	//terrain:
-	std::vector<line_segment> line_segments;
+	std::vector<line_segment> line_segments; //for platforms
+
+	//checkpoints:
+	std::vector<checkpoint> checkpoints; //checkpoints should be sorted by x coordinate
+	int curr_checkpoint_id;
+	checkpoint curr_checkpoint;
+	checkpoint next_checkpoint;
 
 	//input tracking:
 	struct Button {

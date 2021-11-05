@@ -57,15 +57,22 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 		}else if(drawable_name.find("Platform") != std::string::npos){
 			platforms.push_back(drawable.transform);
 			assert(drawable.transform->position.z == 0.0f);
+		}else if(drawable_name.find("Checkpoint") != std::string::npos){
+			checkpoints.emplace_back(glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
 		}
 	}
 	
 	// check all loaded
 	if (platforms.empty()) throw std::runtime_error("Platforms not found.");
-	assert(platforms.size() == 9);	// make sure platform count matched
+	assert(platforms.size() == 9); // make sure platform count matched
+	if (checkpoints.empty()) throw std::runtime_error("Checkpoints not found.");
+	assert(checkpoints.size() == 1); //make sure the checkpoint count matches
 	if(cat_head == nullptr) throw std::runtime_error("Cat head not found.");
 	if(cat_tail == nullptr) throw std::runtime_error("Cat tail not found.");
 	if(doughnut == nullptr) throw std::runtime_error("Doughnut not found.");
+
+	curr_checkpoint_id = -1; //we haven't reached any checkpoint yet
+	next_checkpoint = checkpoints[0];
 	
 	head_pos.x = cat_head->position.x;
 	head_pos.y = cat_head->position.y;
@@ -91,6 +98,8 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 		line_segments.emplace_back(lines[2]);	// up
 		line_segments.emplace_back(lines[3]);	// bottom
 	}
+
+
 
 	// get pointer to camera
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
@@ -209,6 +218,9 @@ void PlayMode::update(float elapsed) {
 
 	//update camera
 	update_camera(elapsed);
+
+	//update checkpoint
+	update_checkpoint();
 
 	// Check collision with the walls and adjust the velocities accordingly
 	collide_segments(head_pos, head_vel, 1, head_grounded);
@@ -453,6 +465,27 @@ void PlayMode::update_camera(float elapsed) { //numbers in this function can be 
 	}
 	else if (camera_pos.z > camera_default_z){ //zoom back in over time
 		camera_pos.z = std::max(camera_default_z, camera_pos.z - elapsed * CAMERA_SPEED);
+	}
+}
+
+void PlayMode::sort_checkpoints() {
+	std::sort(checkpoints.begin(), checkpoints.end());
+}
+
+void PlayMode::update_checkpoint() {
+	if (curr_checkpoint_id == checkpoints.size() - 1) { //we already passed the last checkpoint! is it game over?
+		return; //we can revisit this later if we want the last checkpoint to end the game
+	}
+	if (head_pos.x >= next_checkpoint.position.x || tail_pos.x >= next_checkpoint.position.x) { //if we are past the next checkpoint, then make it the new current checkpoint
+		curr_checkpoint_id += 1;
+		curr_checkpoint = checkpoints[curr_checkpoint_id];
+		curr_checkpoint.reached = true;
+
+		if (curr_checkpoint_id != checkpoints.size() - 1)
+			next_checkpoint = checkpoints[curr_checkpoint_id + 1];
+
+		head_start = curr_checkpoint.position;
+		tail_start = head_start - glm::vec2(1.f, 0.f);
 	}
 }
 
