@@ -100,7 +100,8 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	camera -> fovy = glm::radians(35.0f);		// adjust fov
 	//camera -> fovy = glm::radians(60.0f);
 	//camera -> near = 0.01f;
-	
+	camera_pos = camera->transform->position;
+	camera_default_z = camera_pos.z;
 }
 
 PlayMode::~PlayMode() {
@@ -206,6 +207,9 @@ void PlayMode::update(float elapsed) {
 	head_pos += head_vel * elapsed;
 	tail_pos += tail_vel * elapsed;
 
+	//update camera
+	update_camera(elapsed);
+
 	// Check collision with the walls and adjust the velocities accordingly
 	collide_segments(head_pos, head_vel, 1, head_grounded);
 	collide_segments(tail_pos, tail_vel, 1, tail_grounded);
@@ -262,7 +266,8 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	cat_tail->position.x = tail_pos.x;
 	cat_tail->position.y = tail_pos.y;
 	
-	//draw scene
+	//draw scene and update camera
+	camera->transform->position = camera_pos;
 	camera->aspect = float(drawable_size.x) / float(drawable_size.y);
 
 	//set up light type and position for lit_color_texture_program:
@@ -432,6 +437,23 @@ std::vector<PlayMode::line_segment> PlayMode::get_lines(const Scene::Transform* 
 												};
 	
 	return lines;
+}
+
+void PlayMode::update_camera(float elapsed) { //numbers in this function can be changed later for fine-tuning
+	glm::vec2 camera_pos_2d = glm::vec2(camera_pos.x, camera_pos.y);
+	glm::vec2 camera_dir_2d = head_pos - camera_pos_2d;
+
+	camera_pos.x += camera_dir_2d.x * elapsed * CAMERA_SPEED;
+	camera_pos.y += camera_dir_2d.y * elapsed * CAMERA_SPEED;
+	
+	if (space.pressed) { //zoom out if player is stretched far enough
+		float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
+		float zoom_out_ratio = std::max(1.f, dist / playerlength);
+		camera_pos.z = camera_default_z * zoom_out_ratio;
+	}
+	else if (camera_pos.z > camera_default_z){ //zoom back in over time
+		camera_pos.z = std::max(camera_default_z, camera_pos.z - elapsed * CAMERA_SPEED);
+	}
 }
 
 void PlayMode::collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded) {
