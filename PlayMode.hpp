@@ -101,7 +101,8 @@ struct PlayMode : Mode {
 	float grab_radius = 0.5f; //grabbable radius
 
 	//camera motion
-	glm::vec2 camera_pos;
+	glm::vec3 camera_pos;
+	float camera_default_z;
 	
 	//scene
 	Scene scene;
