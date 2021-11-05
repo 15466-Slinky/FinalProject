@@ -27,10 +27,8 @@ struct PlayMode : Mode {
 		glm::vec2 ep1;
 		glm::vec2 ep2;
 
-		line_segment(glm::vec2 ep1_, glm::vec2 ep2_) {
+		line_segment(glm::vec2 ep1_, glm::vec2 ep2_) : ep1{ep1_}, ep2{ep2_} {
 			assert(ep1_ != ep2); //we do not allow degenerate line segments
-			ep1 = ep1_;
-			ep2 = ep2_;
 		}
 	};
 
@@ -38,10 +36,8 @@ struct PlayMode : Mode {
 		glm::vec2 center;
 		float radius;
 
-		circle(glm::vec2 center_, float radius_) {
+		circle(glm::vec2 center_, float radius_) : center{center_}, radius{radius_} {
 			assert(radius_ != 0.0f); //we do not allow degenerate circles
-			center = center_;
-			radius = radius_;
 		}
 	};
 
@@ -49,24 +45,17 @@ struct PlayMode : Mode {
 		glm::vec2 point_of_intersection;
 		glm::vec2 surface_normal;
 
-		intersection(glm::vec2 point_of_intersection_, glm::vec2 surface_normal_) {
-			point_of_intersection = point_of_intersection_;
-			surface_normal = surface_normal_;
-		}
+		intersection(glm::vec2 point_of_intersection_, glm::vec2 surface_normal_)
+		: point_of_intersection{point_of_intersection_},
+		  surface_normal{surface_normal_} {}
 	};
 
 	struct checkpoint {
 		bool reached;
 		glm::vec2 position;
 
-		checkpoint() {
-			reached = false;
-			position = glm::vec2(0.f);
-		}
-		checkpoint(glm::vec2 position_) {
-			reached = false;
-			position = position_;
-		}
+		checkpoint() : reached{false}, position{glm::vec2(0.f)} {}
+		checkpoint(glm::vec2 position_) : reached{false}, position{position_} {}
 
 		bool operator < (const checkpoint& c) const {
 			return position.x < c.position.x;

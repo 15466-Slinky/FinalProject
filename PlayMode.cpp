@@ -99,8 +99,6 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 		line_segments.emplace_back(lines[3]);	// bottom
 	}
 
-
-
 	// get pointer to camera
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	scene.cameras.emplace_back(&scene.transforms.back());
