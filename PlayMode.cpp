@@ -60,12 +60,13 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 			assert(drawable.transform->position.z == 0.f);
 		}else if(drawable_name.find("Checkpoint") != std::string::npos){
 			checkpoints.emplace_back(glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
+			//checkpoints don't have to be at z-value 0.f for visual reasons
 		}
 	}
 	
 	// check all loaded
 	if (platforms.empty()) throw std::runtime_error("Platforms not found.");
-	assert(platforms.size() == 9); // make sure platform count matched
+	assert(platforms.size() == 10); // make sure platform count matched
 	if (checkpoints.empty()) throw std::runtime_error("Checkpoints not found.");
 	assert(checkpoints.size() == 1); //make sure the checkpoint count matches
 	if(cat_head == nullptr) throw std::runtime_error("Cat head not found.");
