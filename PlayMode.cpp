@@ -10,6 +10,7 @@
 #include "hex_dump.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include <random>
 #include <cmath>
@@ -47,16 +48,16 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 		
 		if(drawable_name == "CatHead"){
 			cat_head = drawable.transform;
-			assert(drawable.transform->position.z == 0.0f);	// make sure on xy plane
+			assert(drawable.transform->position.z == 0.f);	// make sure on xy plane
 		}else if(drawable_name == "CatTail"){
 			cat_tail = drawable.transform;
-			assert(drawable.transform->position.z == 0.0f);
+			assert(drawable.transform->position.z == 0.f);
 		}else if(drawable_name == "Doughnut"){
 			doughnut = drawable.transform;
-			assert(drawable.transform->position.z == 0.0f);
+			assert(drawable.transform->position.z == 0.f);
 		}else if(drawable_name.find("Platform") != std::string::npos){
 			platforms.push_back(drawable.transform);
-			assert(drawable.transform->position.z == 0.0f);
+			assert(drawable.transform->position.z == 0.f);
 		}else if(drawable_name.find("Checkpoint") != std::string::npos){
 			checkpoints.emplace_back(glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
 		}
@@ -83,8 +84,8 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	tail_pos.x = cat_tail->position.x;
 	tail_pos.y = cat_tail->position.y;
 
-	head_vel = glm::vec2(0.0f, 0.0f);
-	tail_vel = glm::vec2(0.0f, 0.0f);
+	head_vel = glm::vec2(0.f, 0.f);
+	tail_vel = glm::vec2(0.f, 0.f);
 
 	head_grounded = false;
 	tail_grounded = false;
@@ -104,7 +105,7 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	scene.cameras.emplace_back(&scene.transforms.back());
 	
 	camera = &scene.cameras.front();	// used perspective camera, may not need to change fov
-	camera -> fovy = glm::radians(35.0f);		// adjust fov
+	camera -> fovy = glm::radians(35.f);		// adjust fov
 	//camera -> fovy = glm::radians(60.0f);
 	//camera -> near = 0.01f;
 	camera_pos = camera->transform->position;
@@ -140,12 +141,12 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			space.pressed = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_q) {
-			if (grab_ledge(tail_pos, 1 + grab_radius)) {
+			if (grab_ledge(tail_pos, 1.f + grab_radius)) {
 				fixed_tail = !fixed_tail;
 			}
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_e) {
-			if (grab_ledge(head_pos, 1 + grab_radius)) {
+			if (grab_ledge(head_pos, 1.f + grab_radius)) {
 				fixed_head = !fixed_head;
 			}
 			return true;
@@ -172,7 +173,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::update(float elapsed) {
-	//respawn if player fell to their deaths
+	//respawn if player fell to their death
 	if (head_pos.y < DEATH_BOUND && tail_pos.y < DEATH_BOUND)
 		respawn();
 
@@ -180,17 +181,17 @@ void PlayMode::update(float elapsed) {
 	head_vel.y -= elapsed * GRAVITY;
 	tail_vel.y -= elapsed * GRAVITY;
 	
-	playerlength = space.pressed ? 20.f : 1.0f;
+	playerlength = space.pressed ? 20.f : 1.f;
 	if (space.pressed) {
 		stretched = true;
 	}
-	else if (stretched && glm::distance(head_pos, tail_pos) <= 4.0f) {
+	else if (stretched && glm::distance(head_pos, tail_pos) <= 4.f) {
 		stretched = false;
 
 		fixed_head = false;
 		head_grounded = false;
-		head_vel += tail_vel * .5f;
-		tail_vel *= .5f;
+		head_vel += tail_vel * 0.5f;
+		tail_vel *= 0.5f;
 
 		printf("Recompressed %f\n", head_vel.x);
 	}
@@ -199,10 +200,10 @@ void PlayMode::update(float elapsed) {
 	if (!fixed_head && !fixed_tail) {
 		free_movement(elapsed);
 	} else if (fixed_head && fixed_tail) {
-		head_vel.x = 0;
-		head_vel.y = 0;
-		tail_vel.x = 0;
-		tail_vel.y = 0;
+		head_vel.x = 0.f;
+		head_vel.y = 0.f;
+		tail_vel.x = 0.f;
+		tail_vel.y = 0.f;
 		std::cout << "you have stuck both your head and tail and cannot move\n";
 	} else if (fixed_head) {
 		fixed_head_movement(elapsed);
@@ -221,15 +222,15 @@ void PlayMode::update(float elapsed) {
 	update_checkpoint();
 
 	// Check collision with the walls and adjust the velocities accordingly
-	collide_segments(head_pos, head_vel, 1, head_grounded);
-	collide_segments(tail_pos, tail_vel, 1, tail_grounded);
+	collide_segments(head_pos, head_vel, 1.f, head_grounded);
+	collide_segments(tail_pos, tail_vel, 1.f, tail_grounded);
 
 	// Air resistance, or surface friction if the segment is sitting on the floor
 	//head_vel *= head_grounded ? .9f : .99f;
 	//tail_vel *= tail_grounded ? .9f : .99f; 
 	// Air resistance only
-	head_vel *= .99f;
-	tail_vel *= .99f; 
+	head_vel *= 0.99f;
+	tail_vel *= 0.99f; 
 
 	//reset button press counters:
 	left.downs = 0;
@@ -302,7 +303,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 std::vector<PlayMode::intersection> PlayMode::get_collisions(const PlayMode::circle &c, const std::vector<PlayMode::line_segment> &ls) {
 	//https://stackoverflow.com/questions/1073336/circle-line-segment-collision-detection-algorithm
-	std::vector<PlayMode::intersection> collision_data; //vector of pairs of points of intersection and normals
+	std::vector<PlayMode::intersection> collision_data;
 
 	for (PlayMode::line_segment l : ls) { //iterate through each line segment
 		glm::vec2 start = l.ep1;
@@ -314,39 +315,34 @@ std::vector<PlayMode::intersection> PlayMode::get_collisions(const PlayMode::cir
 		glm::vec2 f = start - circle_center;
 
 		float a = glm::dot(d, d);
-		float b = 2.0f * glm::dot(f, d);
+		float b = 2.f * glm::dot(f, d);
 		float c = glm::dot(f, f) - radius * radius;
 
-		float discriminant = b * b - 4.0f * a * c;
-		if (discriminant >= 0.0f) { //we hit the circle in some way
+		float discriminant = b * b - 4.f * a * c;
+		if (discriminant >= 0.f) { //we hit the circle in some way
 			discriminant = std::sqrt(discriminant);
 
-			float t1 = (-b - discriminant) / (2.0f * a);
-			float t2 = (-b + discriminant) / (2.0f * a);
+			assert(a != 0.f);
+			float t1 = (-b - discriminant) / (2.f * a);
+			float t2 = (-b + discriminant) / (2.f * a);
 
 			if (t1 == t2) { //segment intersects tangent to circle
 				glm::vec2 point_of_intersection = start + t1 * d;
-				glm::vec2 surface_normal = glm::normalize(point_of_intersection - circle_center);
-				collision_data.emplace_back(point_of_intersection, surface_normal);
+				collision_data.emplace_back(point_of_intersection, l.surface_normal);
 			}
-			else if (t1 >= 0.0f && t1 <= 1.0f && t2 >= 0.0f && t2 <= 1.0f) { //segment impales the circle
+			else if (t1 >= 0.f && t1 <= 1.f && t2 >= 0.f && t2 <= 1.f) { //segment impales the circle
 				glm::vec2 point_of_intersection_1 = start + t1 * d;
 				glm::vec2 point_of_intersection_2 = start + t2 * d;
 				glm::vec2 midpoint = (point_of_intersection_1 + point_of_intersection_2) / 2.0f;
-				glm::vec2 surface_normal = glm::normalize(midpoint - circle_center);
-				collision_data.emplace_back(midpoint, surface_normal);
+				collision_data.emplace_back(midpoint, l.surface_normal);
 			}
-			else if (t1 >= 0.0f && t1 <= 1.0f) { //segment starts outside the circle and ends inside (poke)
+			else if (t1 >= 0.f && t1 <= 1.f) { //segment starts outside the circle and ends inside (poke)
 				glm::vec2 point_of_intersection = start + t1 * d;
-				glm::vec2 dir = point_of_intersection - circle_center;
-				glm::vec2 surface_normal = glm::normalize(glm::vec2(-dir.y, dir.x)); //may not be the right direction
-				collision_data.emplace_back(point_of_intersection, surface_normal);
+				collision_data.emplace_back(point_of_intersection, l.surface_normal);
 			}
-			else if (t2 >= 0.0f && t2 <= 1.0f) { //segment starts inside the circle and exits (exit wound)
+			else if (t2 >= 0.f && t2 <= 1.f) { //segment starts inside the circle and exits (exit wound)
 				glm::vec2 point_of_intersection = start + t2 * d;
-				glm::vec2 dir = point_of_intersection - circle_center;
-				glm::vec2 surface_normal = glm::normalize(glm::vec2(-dir.y, dir.x)); //may not be the right direction
-				collision_data.emplace_back(point_of_intersection, surface_normal);
+				collision_data.emplace_back(point_of_intersection, l.surface_normal);
 			}
 			/*
 			else { no intersection! }
@@ -362,41 +358,37 @@ PlayMode::intersection PlayMode::get_capsule_collision(const PlayMode::circle &c
 	float radius = c.radius;
 	glm::vec2 start = l.ep1;
 	glm::vec2 end = l.ep2;
-
 	is_hit = true;
 
 	//test the line segment first
 	//project point onto line segment: https://stackoverflow.com/questions/10301001/perpendicular-on-a-line-segment-from-a-given-point
-
 	float t = ((point.x - start.x) * (end.x - start.x) + (point.y - start.y) * (end.y - start.y)) / (powf(end.x - start.x, 2) + powf(end.y - start.y, 2));
-	if (t >= 0.0f && t <= 1.0f) {
+	if (t >= 0.f && t <= 1.f) {
 		glm::vec2 projection = start + t * (end - start);
 		float distance = glm::distance(point, projection);
 
 		if (distance <= radius) {
-			glm::vec2 surface_normal = glm::normalize(point - projection);
-			glm::vec2 closest_exterior_point = projection + radius * surface_normal;
-
-			return PlayMode::intersection(closest_exterior_point, surface_normal);
+			glm::vec2 closest_exterior_point = projection + radius * l.surface_normal;
+			return PlayMode::intersection(closest_exterior_point, l.surface_normal);
 		}
 	}
 
 	//test the endpoints of the line segment
 	if (glm::distance(point, start) <= radius) {
+		assert(point != start);
 		glm::vec2 surface_normal = glm::normalize(point - start);
 		glm::vec2 closest_exterior_point = start + radius * surface_normal;
-
 		return PlayMode::intersection(closest_exterior_point, surface_normal);
 	}
 	if (glm::distance(point, end) <= radius) {
+		assert(point != end);
 		glm::vec2 surface_normal = glm::normalize(point - end);
 		glm::vec2 closest_exterior_point = end + radius * surface_normal;
-
 		return PlayMode::intersection(closest_exterior_point, surface_normal);
 	}
 
 	is_hit = false;
-	return PlayMode::intersection(glm::vec2(0.0f), glm::vec2(0.0f)); //point isn't within the capsule
+	return PlayMode::intersection(glm::vec2(0.f), glm::vec2(0.f)); //point isn't within the capsule
 }
 
 // TODO: load all surface line segment, use local_to_world to handle rotated platform
@@ -405,24 +397,27 @@ std::vector<PlayMode::line_segment> PlayMode::get_lines(const Scene::Transform* 
 	// +y is up, +x is right
 	
 	glm::vec3 position = platform->position;
+	glm::quat rotation = platform->rotation;
+	glm::mat3 rotation_matrix = glm::mat3_cast(rotation);
 	glm::vec3 scale = platform->scale;
 	//glm::mat4x3 to_world = platform->make_local_to_world();
-
 	
 	// left line
-	glm::vec3 l_min = platform->rotation * glm::vec3(-scale.x, scale.y, 0.0f) + position;
-	glm::vec3 l_max = platform->rotation * glm::vec3(-scale.x, -scale.y, 0.0f) + position;
-	
+	glm::vec3 l_min = rotation * glm::vec3(-scale.x, scale.y, 0.f) + position;
+	glm::vec3 l_max = rotation * glm::vec3(-scale.x, -scale.y, 0.f) + position;
+	glm::vec3 l_norm = rotation_matrix * glm::vec3(-1.f, 0.f, 0.f);
 	// right line
-	glm::vec3 r_min = platform->rotation * glm::vec3(scale.x, scale.y, 0.0f) + position;
-	glm::vec3 r_max = platform->rotation * glm::vec3(scale.x, -scale.y, 0.0f) + position;
+	glm::vec3 r_min = rotation * glm::vec3(scale.x, scale.y, 0.f) + position;
+	glm::vec3 r_max = rotation * glm::vec3(scale.x, -scale.y, 0.f) + position;
+	glm::vec3 r_norm = rotation_matrix * glm::vec3(1.f, 0.f, 0.f);
 	// upper line
-	glm::vec3 u_min = platform->rotation * glm::vec3(-scale.x, scale.y, 0.0f) + position;
-	glm::vec3 u_max = platform->rotation * glm::vec3(scale.x, scale.y, 0.0f) + position;
+	glm::vec3 u_min = rotation * glm::vec3(-scale.x, scale.y, 0.f) + position;
+	glm::vec3 u_max = rotation * glm::vec3(scale.x, scale.y, 0.f) + position;
+	glm::vec3 u_norm = rotation_matrix * glm::vec3(0.f, 1.f, 0.f);
 	// bottom line
-	glm::vec3 d_min = platform->rotation * glm::vec3(-scale.x, -scale.y, 0.0f) + position;
-	glm::vec3 d_max = platform->rotation * glm::vec3(scale.x, -scale.y, 0.0f) + position;
-	
+	glm::vec3 d_min = rotation * glm::vec3(-scale.x, -scale.y, 0.f) + position;
+	glm::vec3 d_max = rotation * glm::vec3(scale.x, -scale.y, 0.f) + position;
+	glm::vec3 d_norm = rotation_matrix * glm::vec3(0.f, -1.f, 0.f);
 
 	/*
 	// left line
@@ -439,12 +434,12 @@ std::vector<PlayMode::line_segment> PlayMode::get_lines(const Scene::Transform* 
 	glm::vec3 d_max = to_world * glm::vec4(scale.x, -scale.y, 0.0f, 1.0f);
 	*/
 
-	
-	std::vector<PlayMode::line_segment> lines = {line_segment(glm::vec2(l_min.x, l_min.y), glm::vec2(l_max.x, l_max.y)),
-												line_segment(glm::vec2(r_min.x, r_min.y), glm::vec2(r_max.x, r_max.y)),
-												line_segment(glm::vec2(u_min.x, u_min.y), glm::vec2(u_max.x, u_max.y)),
-												line_segment(glm::vec2(d_min.x, d_min.y), glm::vec2(d_max.x, d_max.y)),
-												};
+	std::vector<PlayMode::line_segment> lines = {
+		line_segment(l_min, l_max, l_norm),
+		line_segment(r_min, r_max, r_norm),
+		line_segment(u_min, u_max, u_norm),
+		line_segment(d_min, d_max, d_norm)
+	};
 	
 	return lines;
 }
@@ -502,10 +497,10 @@ void PlayMode::collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bo
 			// Project the velocity onto the normal, and subtract that component so
 			// vel is perpendicular
 			float d = glm::dot(hit.surface_normal, vel);
-			if (d > 0) d = 0;
+			if (d > 0.f) d = 0.f;
 			vel -= hit.surface_normal * d;
 
-			if(hit.surface_normal.y > .5f) {
+			if(hit.surface_normal.y > 0.5f) {
 				grounded = true;
 			}
 		}
@@ -522,8 +517,8 @@ bool PlayMode::grab_ledge(glm::vec2& pos, float radius) {
 void PlayMode::free_movement(float elapsed) {
 	// If the head is grounded, just stay still
 	if(head_grounded) {
-		head_vel.x = 0;
-		head_vel.y = 0;
+		head_vel.x = 0.f;
+		head_vel.y = 0.f;
 	}
 
 	if (left.pressed) head_vel.x = -PLAYER_SPEED;
@@ -531,14 +526,15 @@ void PlayMode::free_movement(float elapsed) {
 	if (up.pressed && head_grounded) 
 	{	
 		head_vel.y = JUMP_SPEED;
-		tail_vel.y += JUMP_SPEED / 2;
+		tail_vel.y += JUMP_SPEED / 2.f;
 	}
-
 
 	glm::vec2 disp = (head_pos - tail_pos);
 	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
-	glm::vec2 spring_force = glm::normalize(disp) * dist * k;
-	tail_vel += spring_force * elapsed;
+	if (disp != glm::vec2(0.f)) {
+		glm::vec2 spring_force = glm::normalize(disp) * dist * k;
+		tail_vel += spring_force * elapsed;
+	}
 	
 	// Only pull on the head if it's not standing somewhere
 	//if(!head_grounded)
@@ -546,13 +542,13 @@ void PlayMode::free_movement(float elapsed) {
 }
 
 void PlayMode::fixed_head_movement(float elapsed) {
-	head_vel.x = 0;
-	head_vel.y = 0;
+	head_vel.x = 0.f;
+	head_vel.y = 0.f;
 
 	// If the tail is grounded, just stay still
 	if(tail_grounded) {
-		tail_vel.x = 0;
-		tail_vel.y = 0;
+		tail_vel.x = 0.f;
+		tail_vel.y = 0.f;
 	}
 	//tail_vel.x = 0;
 	//tail_vel.y = 0;
@@ -562,23 +558,27 @@ void PlayMode::fixed_head_movement(float elapsed) {
 
 	glm::vec2 disp = (head_pos - tail_pos);
 	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
-	glm::vec2 spring_force = glm::normalize(disp) * dist * k;
-	tail_vel += spring_force * elapsed;
+	if (disp != glm::vec2(0.f)) {
+		glm::vec2 spring_force = glm::normalize(disp) * dist * k;
+		tail_vel += spring_force * elapsed;
+	}
 }
 
 void PlayMode::fixed_tail_movement(float elapsed) {
 	//head_vel.x = 0;
 	//head_vel.y = 0;
-	tail_vel.x = 0;
-	tail_vel.y = 0;
+	tail_vel.x = 0.f;
+	tail_vel.y = 0.f;
 	if (left.pressed) head_vel.x = -PLAYER_SPEED;
 	else if (right.pressed) head_vel.x = PLAYER_SPEED;
 	if (up.pressed && head_grounded) head_vel.y = JUMP_SPEED;
 
 	glm::vec2 disp = (head_pos - tail_pos);
 	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
-	glm::vec2 spring_force = glm::normalize(disp) * dist * k;
-	head_vel -= spring_force * elapsed;
+	if (disp != glm::vec2(0.f)) {
+		glm::vec2 spring_force = glm::normalize(disp) * dist * k;
+		head_vel -= spring_force * elapsed;
+	}
 }
 
 void PlayMode::respawn() {

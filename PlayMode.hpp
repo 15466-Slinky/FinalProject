@@ -26,9 +26,13 @@ struct PlayMode : Mode {
 	struct line_segment {
 		glm::vec2 ep1;
 		glm::vec2 ep2;
+		glm::vec2 surface_normal;
 
-		line_segment(glm::vec2 ep1_, glm::vec2 ep2_) : ep1{ep1_}, ep2{ep2_} {
-			assert(ep1_ != ep2); //we do not allow degenerate line segments
+		line_segment(glm::vec2 ep1_, glm::vec2 ep2_, glm::vec2 surface_normal_) 
+		: ep1{ep1_}, ep2{ep2_},
+		  surface_normal{glm::normalize(surface_normal_)} {
+			assert(ep1 != ep2); //we do not allow degenerate line segments
+			assert(surface_normal != glm::vec2(0.f)); //do not allow zero-vector to be a surface normal
 		}
 	};
 
@@ -37,7 +41,7 @@ struct PlayMode : Mode {
 		float radius;
 
 		circle(glm::vec2 center_, float radius_) : center{center_}, radius{radius_} {
-			assert(radius_ != 0.0f); //we do not allow degenerate circles
+			assert(radius_ != 0.f); //we do not allow degenerate circles
 		}
 	};
 
@@ -47,7 +51,7 @@ struct PlayMode : Mode {
 
 		intersection(glm::vec2 point_of_intersection_, glm::vec2 surface_normal_)
 		: point_of_intersection{point_of_intersection_},
-		  surface_normal{surface_normal_} {}
+		  surface_normal{glm::normalize(surface_normal_)} {}
 	};
 
 	struct checkpoint {
@@ -116,8 +120,8 @@ struct PlayMode : Mode {
 	// Indicates if the player has extended the player size, and the player hasn't yet compressed back to actual size
 	bool stretched = false;
 
-	float playerlength = 5.0f; //length of spring
-	float k = 20.0f; //spring constant
+	float playerlength = 5.f; //length of spring
+	float k = 20.f; //spring constant
 	float grab_radius = 0.5f; //grabbable radius
 
 	//camera motion
