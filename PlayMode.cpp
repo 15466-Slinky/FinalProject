@@ -367,9 +367,6 @@ PlayMode::intersection PlayMode::get_capsule_collision(const PlayMode::circle &c
 		glm::vec2 projection = start + t * (end - start);
 		float distance = glm::distance(point, projection);
 
-		if (distance == radius) {
-			return PlayMode::intersection(point, l.surface_normal); //we're already on the closest exterior point
-		}
 		if (distance <= radius) {
 			glm::vec2 closest_exterior_point = projection + radius * l.surface_normal;
 			return PlayMode::intersection(closest_exterior_point, l.surface_normal);

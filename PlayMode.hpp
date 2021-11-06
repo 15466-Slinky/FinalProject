@@ -51,9 +51,7 @@ struct PlayMode : Mode {
 
 		intersection(glm::vec2 point_of_intersection_, glm::vec2 surface_normal_)
 		: point_of_intersection{point_of_intersection_},
-		  surface_normal{glm::normalize(surface_normal_)} {
-		  	assert(surface_normal != glm::vec2(0.f)); //do not allow zero-vector to be a surface normal
-		}
+		  surface_normal{glm::normalize(surface_normal_)} {}
 	};
 
 	struct checkpoint {
