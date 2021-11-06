@@ -31,7 +31,8 @@ struct PlayMode : Mode {
 		line_segment(glm::vec2 ep1_, glm::vec2 ep2_, glm::vec2 surface_normal_) 
 		: ep1{ep1_}, ep2{ep2_},
 		  surface_normal{glm::normalize(surface_normal_)} {
-			assert(ep1_ != ep2); //we do not allow degenerate line segments
+			assert(ep1 != ep2); //we do not allow degenerate line segments
+			assert(surface_normal != glm::vec2(0.f)); //do not allow zero-vector to be a surface normal
 		}
 	};
 
@@ -50,7 +51,9 @@ struct PlayMode : Mode {
 
 		intersection(glm::vec2 point_of_intersection_, glm::vec2 surface_normal_)
 		: point_of_intersection{point_of_intersection_},
-		  surface_normal{glm::normalize(surface_normal_)} {}
+		  surface_normal{glm::normalize(surface_normal_)} {
+		  	assert(surface_normal != glm::vec2(0.f)); //do not allow zero-vector to be a surface normal
+		}
 	};
 
 	struct checkpoint {
