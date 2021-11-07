@@ -126,7 +126,8 @@ struct PlayMode : Mode {
 
 	//camera motion
 	glm::vec3 camera_pos;
-	float camera_default_z;
+	float camera_default_z = 50.f;
+	float camera_zoomed_out = 1.f;
 	
 	//scene
 	Scene scene;

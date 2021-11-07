@@ -109,8 +109,8 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	camera -> fovy = glm::radians(35.f);		// adjust fov
 	//camera -> fovy = glm::radians(60.0f);
 	//camera -> near = 0.01f;
-	camera_pos = camera->transform->position;
-	camera_default_z = camera_pos.z;
+	camera_pos = glm::vec3(head_pos.x, head_pos.y, camera_default_z);
+	camera->transform->position = camera_pos;
 }
 
 PlayMode::~PlayMode() {
@@ -447,18 +447,19 @@ std::vector<PlayMode::line_segment> PlayMode::get_lines(const Scene::Transform* 
 
 void PlayMode::update_camera(float elapsed) { //numbers in this function can be changed later for fine-tuning
 	glm::vec2 camera_pos_2d = glm::vec2(camera_pos.x, camera_pos.y);
-	glm::vec2 camera_dir_2d = head_pos - camera_pos_2d;
+	glm::vec2 camera_dir_2d = ((head_pos + tail_pos) / 2.f) - camera_pos_2d;
 
 	camera_pos.x += camera_dir_2d.x * elapsed * CAMERA_SPEED;
 	camera_pos.y += camera_dir_2d.y * elapsed * CAMERA_SPEED;
 	
 	if (space.pressed) { //zoom out if player is stretched far enough
-		float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
-		float zoom_out_ratio = std::max(1.f, dist / playerlength);
-		camera_pos.z = camera_default_z * zoom_out_ratio;
+		float zoom_out_ratio = std::max(1.f, glm::distance(head_pos, tail_pos) / playerlength);
+		camera_zoomed_out = zoom_out_ratio;
+		camera_pos.z = camera_default_z * camera_zoomed_out;
 	}
 	else if (camera_pos.z > camera_default_z){ //zoom back in over time
-		camera_pos.z = std::max(camera_default_z, camera_pos.z - elapsed * CAMERA_SPEED);
+		camera_zoomed_out = std::max(1.f, camera_zoomed_out - elapsed * CAMERA_SPEED / 5.f);
+		camera_pos.z = camera_default_z * camera_zoomed_out;
 	}
 }
 
