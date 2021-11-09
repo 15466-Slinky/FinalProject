@@ -7,4 +7,6 @@ circle-line-segment intersection: https://stackoverflow.com/questions/1073336/ci
 projecting a point onto a line segment: https://stackoverflow.com/questions/10301001/perpendicular-on-a-line-segment-from-a-given-point
 
 ## Asset
-scenes/slinky.blend contains the game world.
+scenes/slinky.blend contains the game world, built with Blender.
+
+In game music obtained from https://freepd.com/
