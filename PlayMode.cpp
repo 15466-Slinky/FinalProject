@@ -40,6 +40,9 @@ Load< Scene > slinky_scene(LoadTagDefault, []() -> Scene const * {
 	});
 });
 
+Load< Sound::Sample > bgm_loop_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("Foam_Rubber.opus"));
+});
 
 PlayMode::PlayMode() : scene(*slinky_scene) {
 	// get pointer to each shape
@@ -111,6 +114,10 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	//camera -> near = 0.01f;
 	camera_pos = glm::vec3(head_pos.x, head_pos.y, camera_default_z);
 	camera->transform->position = camera_pos;
+
+	//start music loop playing:
+	bgm_loop = Sound::loop(*bgm_loop_sample, 1.0f, 0.0f);
+
 }
 
 PlayMode::~PlayMode() {

@@ -1,6 +1,8 @@
 #include "Mode.hpp"
 
 #include "Scene.hpp"
+#include "Sound.hpp"
+
 
 #include <glm/glm.hpp>
 
@@ -138,5 +140,8 @@ struct PlayMode : Mode {
 		
 	Scene::Transform* doughnut = nullptr;
 	Scene::Transform* cat_head = nullptr;
-	Scene::Transform* cat_tail = nullptr;	
+	Scene::Transform* cat_tail = nullptr;
+
+	//sound
+	std::shared_ptr< Sound::PlayingSample > bgm_loop;
 };
