@@ -79,6 +79,9 @@ struct PlayMode : Mode {
 	void sort_checkpoints();
 	void update_checkpoint();
 
+	//fish behavior
+	void spin_fish(float elapsed);
+
 	//----- movement updates -----
 	void collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded);
 	bool grab_ledge(glm::vec2& pos, float radius);
@@ -135,6 +138,7 @@ struct PlayMode : Mode {
 	
 	//scene objects
 	std::vector<Scene::Transform*> platforms;
+	std::vector<Scene::Transform*> fishes;
 		
 	Scene::Transform* doughnut = nullptr;
 	Scene::Transform* cat_head = nullptr;
