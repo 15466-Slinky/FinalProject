@@ -64,7 +64,7 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 			//checkpoints don't have to be at z-value 0.f for visual reasons
 		}else if (drawable_name.find("Fish") != std::string::npos){
 			fishes.push_back(drawable.transform);
-			//assert(drawable.transform->position.z == 0.f);
+			//fish don't have to be at z-value 0.f for visual reasons
 		}
 	}
 	
