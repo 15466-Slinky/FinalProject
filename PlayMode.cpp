@@ -11,6 +11,7 @@
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include <random>
 #include <cmath>
@@ -64,6 +65,9 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 		}else if(drawable_name.find("Checkpoint") != std::string::npos){
 			checkpoints.emplace_back(glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
 			//checkpoints don't have to be at z-value 0.f for visual reasons
+		}else if (drawable_name.find("Fish") != std::string::npos){
+			fishes.push_back(drawable.transform);
+			//fish don't have to be at z-value 0.f for visual reasons
 		}
 	}
 	
@@ -76,6 +80,7 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	if(cat_tail == nullptr) throw std::runtime_error("Cat tail not found.");
 	if(doughnut == nullptr) throw std::runtime_error("Doughnut not found.");
 
+	sort_checkpoints();
 	curr_checkpoint_id = -1; //we haven't reached any checkpoint yet
 	next_checkpoint = checkpoints[0];
 	
@@ -228,6 +233,9 @@ void PlayMode::update(float elapsed) {
 
 	//update checkpoint
 	update_checkpoint();
+
+	//spin fish
+	spin_fish(elapsed);
 
 	// Check collision with the walls and adjust the velocities accordingly
 	collide_segments(head_pos, head_vel, 1.f, head_grounded);
@@ -488,6 +496,16 @@ void PlayMode::update_checkpoint() {
 
 		head_start = curr_checkpoint.position;
 		tail_start = head_start - glm::vec2(1.f, 0.f);
+	}
+}
+
+void PlayMode::spin_fish(float elapsed) {
+	float spin_speed = 1.f;
+
+	for (size_t i=0;i<fishes.size();i++) {
+		//spin along the x-axis
+		glm::vec3 euler_rot = glm::vec3(elapsed * spin_speed, 0.f, 0.f);
+		fishes[i]->rotation *= glm::quat(euler_rot);
 	}
 }
 
