@@ -63,9 +63,10 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 			platforms.push_back(drawable.transform);
 			assert(drawable.transform->position.z == 0.f);
 		}else if(drawable_name.find("Checkpoint") != std::string::npos){
-			checkpoints.emplace_back(glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
+			checkpoints.emplace_back(drawable_name, glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
 			//checkpoints don't have to be at z-value 0.f for visual reasons
-		}else if (drawable_name.find("Fish") != std::string::npos){
+			assert(checkpoint_find_sides(&(checkpoints.back())));
+		}else if(drawable_name.find("Fish") != std::string::npos){
 			fishes.push_back(drawable.transform);
 			//fish don't have to be at z-value 0.f for visual reasons
 		}
@@ -76,6 +77,8 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	assert(platforms.size() == 10); // make sure platform count matched
 	if (checkpoints.empty()) throw std::runtime_error("Checkpoints not found.");
 	assert(checkpoints.size() == 1); //make sure the checkpoint count matches
+	for (size_t i=0;i<checkpoints.size();i++)
+		if (!checkpoints[i].box_has_sides()) throw std::runtime_error("AHHHHHH.");
 	if(cat_head == nullptr) throw std::runtime_error("Cat head not found.");
 	if(cat_tail == nullptr) throw std::runtime_error("Cat tail not found.");
 	if(doughnut == nullptr) throw std::runtime_error("Doughnut not found.");
@@ -232,7 +235,7 @@ void PlayMode::update(float elapsed) {
 	update_camera(elapsed);
 
 	//update checkpoint
-	update_checkpoint();
+	update_checkpoints();
 
 	//spin fish
 	spin_fish(elapsed);
@@ -482,7 +485,7 @@ void PlayMode::sort_checkpoints() {
 	std::sort(checkpoints.begin(), checkpoints.end());
 }
 
-void PlayMode::update_checkpoint() {
+void PlayMode::update_checkpoints() {
 	if (curr_checkpoint_id == checkpoints.size() - 1) { //we already passed the last checkpoint! is it game over?
 		return; //we can revisit this later if we want the last checkpoint to end the game
 	}
@@ -491,12 +494,65 @@ void PlayMode::update_checkpoint() {
 		curr_checkpoint = checkpoints[curr_checkpoint_id];
 		curr_checkpoint.reached = true;
 
+		activate_checkpoint(curr_checkpoint_id);
+
 		if (curr_checkpoint_id != checkpoints.size() - 1)
 			next_checkpoint = checkpoints[curr_checkpoint_id + 1];
 
 		head_start = curr_checkpoint.position;
 		tail_start = head_start - glm::vec2(1.f, 0.f);
 	}
+}
+
+void PlayMode::activate_checkpoint(int checkpoint_id) {
+	std::cout << "Checkpoint id: " << checkpoint_id << std::endl;
+	if (!(0 <= checkpoint_id && checkpoint_id < checkpoints.size())) throw std::runtime_error("Cannot activate checkpoint!");
+	PlayMode::checkpoint c = checkpoints[checkpoint_id];
+	if (!c.box_has_sides()) {
+		std::cout << c.box_front->name << c.box_left->name << c.box_right->name << std::endl;
+		throw std::runtime_error("Checkpoint does not have all sides!");
+	}
+
+	{ //make the front of the box fall down
+		c.box_front->position.y -= 1.f;
+		c.box_front->position.z += 1.f;
+		glm::vec3 euler_rot = glm::vec3(0.1f, 0.f, 0.f);
+		c.box_front->rotation *= c.box_front->parent->rotation * glm::quat(euler_rot);
+	}
+	{ //make the left side of the box fall down
+		glm::vec3 euler_rot = glm::vec3(0.f, 0.f, 0.1f);
+		c.box_left->rotation *= glm::quat(euler_rot);
+		c.box_left->position.x -= 1.f;
+		c.box_left->position.y -= 1.f;
+	}
+	{ //make the right side of the box fall down
+		c.box_right->position.x += 1.f;
+		c.box_left->position.y -= 1.f;
+		glm::vec3 euler_rot = glm::vec3(0.f, 0.f, -0.1f);
+		c.box_right->rotation *= glm::quat(euler_rot);
+	}
+}
+
+bool PlayMode::checkpoint_find_sides(checkpoint* c) {
+	std::string prefix = c->name.substr(0, c->name.find(".Checkpoint"));
+	std::cout << "Checkpoint prefix: " << prefix << std::endl;
+	std::string front = prefix + ".Front";
+	std::string left = prefix + ".Left";
+	std::string right = prefix + ".Right";
+	for (auto &drawable : scene.drawables) {
+		std::string drawable_name = drawable.transform->name;
+		if (drawable_name == front) c->box_front = drawable.transform;
+		else if (drawable_name == left) c->box_left = drawable.transform;
+		else if (drawable_name == right) c->box_right = drawable.transform;
+
+		if (c->box_has_sides()) {
+			std::cout << "Found all box sides." << std::endl;
+			std::cout << c->box_front->name << c->box_left->name << c->box_right->name << std::endl;
+			return true;
+		}
+	}
+	std::cout << "Didn't find all box sides." << std::endl;
+	return false;
 }
 
 void PlayMode::spin_fish(float elapsed) {
