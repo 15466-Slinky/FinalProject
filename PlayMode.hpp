@@ -87,8 +87,10 @@ struct PlayMode : Mode {
 	//checkpoint behavior
 	void sort_checkpoints();
 	void update_checkpoints();
-	void activate_checkpoint(int checkpoint_id);
+	void activate_checkpoint(int checkpoint_id, float elapsed);
 	bool checkpoint_find_sides(checkpoint* c);
+	bool activating_checkpoint = false;
+	float accumulated_time = 0.f;
 
 	//fish behavior
 	void spin_fish(float elapsed);
