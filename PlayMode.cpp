@@ -215,6 +215,11 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::update(float elapsed) {
+	//check if the game has ended, aka if we have eaten the donut
+	if (glm::distance(head_pos, glm::vec2(doughnut->position)) < 1.f) {
+		game_over = true;
+	}
+
 	//respawn if player fell to their death
 	if (head_pos.y < DEATH_BOUND && tail_pos.y < DEATH_BOUND){
 		respawn();
@@ -328,36 +333,6 @@ void PlayMode::update(float elapsed) {
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
-//	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-//	glClear(GL_COLOR_BUFFER_BIT);
-
-//	{ //use DrawLines to overlay some text:
-//		glDisable(GL_DEPTH_TEST);
-//		float aspect = float(drawable_size.x) / float(drawable_size.y);
-//		DrawLines lines(glm::mat4(
-//			1.0f / aspect, 0.0f, 0.0f, 0.0f,
-//			0.0f, 1.0f, 0.0f, 0.0f,
-//			0.0f, 0.0f, 1.0f, 0.0f,
-//			0.0f, 0.0f, 0.0f, 1.0f
-//		));
-//
-//		auto draw_text = [&](glm::vec2 const &at, std::string const &text, float H) {
-//			lines.draw_text(text,
-//				glm::vec3(at.x, at.y, 0.0),
-//				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-//				glm::u8vec4(0x00, 0x00, 0x00, 0x00));
-//			float ofs = 2.0f / drawable_size.y;
-//			lines.draw_text(text,
-//				glm::vec3(at.x + ofs, at.y + ofs, 0.0),
-//				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-//				glm::u8vec4(0xff, 0xff, 0xff, 0x00));
-//		};
-//
-//		draw_text(glm::vec2(-aspect + 0.1f, 0.0f), server_message, 0.09f);
-//
-//		draw_text(glm::vec2(-aspect + 0.1f,-0.9f), "(press WASD to change your total)", 0.09f);
-//	}
-
 	cat_head->position.x = head_pos.x;
 	cat_head->position.y = head_pos.y;
 
@@ -386,6 +361,33 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	scene.draw(*camera);
 	
 	GL_ERRORS();
+
+	if (game_over) { //use DrawLines to overlay some text:
+		glDisable(GL_DEPTH_TEST);
+		float aspect = float(drawable_size.x) / float(drawable_size.y);
+		DrawLines lines(glm::mat4(
+			1.0f / aspect, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f
+		));
+
+		auto draw_text = [&](glm::vec2 const &at, std::string const &text, float H) {
+			lines.draw_text(text,
+				glm::vec3(at.x, at.y, 0.0),
+				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+				glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+			float ofs = 2.0f / drawable_size.y;
+			lines.draw_text(text,
+				glm::vec3(at.x + ofs, at.y + ofs, 0.0),
+				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+				glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+		};
+
+		draw_text(glm::vec2(-aspect + 0.1f, 0.0f), "GAME OVER: YOU WIN!", 0.09f);
+
+		draw_text(glm::vec2(-aspect + 0.1f,-0.9f), "(press WASD to change your total)", 0.09f);
+	}
 }
 
 std::vector<PlayMode::intersection> PlayMode::get_collisions(const PlayMode::circle &c, const std::vector<PlayMode::line_segment> &ls) {
@@ -550,6 +552,7 @@ void PlayMode::update_camera(float elapsed) { //numbers in this function can be 
 }
 
 void PlayMode::sort_checkpoints() {
+	//sort checkpoints based on x position
 	std::sort(checkpoints.begin(), checkpoints.end());
 }
 

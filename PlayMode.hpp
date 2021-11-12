@@ -104,6 +104,8 @@ struct PlayMode : Mode {
 	void respawn();
 
 	//----- game state -----
+	bool game_over = false;
+
 	//terrain:
 	std::vector<line_segment> line_segments; //for platforms
 
