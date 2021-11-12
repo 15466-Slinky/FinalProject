@@ -10,3 +10,5 @@ projecting a point onto a line segment: https://stackoverflow.com/questions/1030
 scenes/slinky.blend contains the game world, built with Blender.
 
 In game music obtained from https://freepd.com/
+
+SFX from https://freesound.org
