@@ -37,7 +37,6 @@ struct PlayMode : Mode {
 			assert(surface_normal != glm::vec2(0.f)); //do not allow zero-vector to be a surface normal
 		}
 	};
-
 	struct circle {
 		glm::vec2 center;
 		float radius;
@@ -46,7 +45,6 @@ struct PlayMode : Mode {
 			assert(radius_ != 0.f); //we do not allow degenerate circles
 		}
 	};
-
 	struct intersection {
 		glm::vec2 point_of_intersection;
 		glm::vec2 surface_normal;
@@ -55,14 +53,23 @@ struct PlayMode : Mode {
 		: point_of_intersection{point_of_intersection_},
 		  surface_normal{glm::normalize(surface_normal_)} {}
 	};
-
 	struct checkpoint {
+		std::string name;
 		bool reached;
 		glm::vec2 position;
 
-		checkpoint() : reached{false}, position{glm::vec2(0.f)} {}
-		checkpoint(glm::vec2 position_) : reached{false}, position{position_} {}
+		Scene::Transform* box_front;
+		Scene::Transform* box_left;
+		Scene::Transform* box_right;
 
+		checkpoint() : name{"Unnamed"}, reached{false}, position{glm::vec2(0.f)},
+			box_front{nullptr}, box_left{nullptr}, box_right{nullptr} {}
+		checkpoint(std::string name_, glm::vec2 position_) : name{name_}, reached{false}, position{position_},
+			box_front{nullptr}, box_left{nullptr}, box_right{nullptr} {}
+
+		bool box_has_sides() {
+			return (box_left != nullptr && box_right != nullptr && box_front != nullptr);
+		}
 		bool operator < (const checkpoint& c) const {
 			return position.x < c.position.x;
 		}
@@ -79,7 +86,11 @@ struct PlayMode : Mode {
 
 	//checkpoint behavior
 	void sort_checkpoints();
-	void update_checkpoint();
+	void update_checkpoints();
+	void activate_checkpoint(int checkpoint_id, float elapsed);
+	bool checkpoint_find_sides(checkpoint* c);
+	bool activating_checkpoint = false;
+	float accumulated_time = 0.f;
 
 	//fish behavior
 	void spin_fish(float elapsed);

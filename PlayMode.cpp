@@ -83,9 +83,10 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 			platforms.push_back(drawable.transform);
 			assert(drawable.transform->position.z == 0.f);
 		}else if(drawable_name.find("Checkpoint") != std::string::npos){
-			checkpoints.emplace_back(glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
+			checkpoints.emplace_back(drawable_name, glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
 			//checkpoints don't have to be at z-value 0.f for visual reasons
-		}else if (drawable_name.find("Fish") != std::string::npos){
+			assert(checkpoint_find_sides(&(checkpoints.back())));
+		}else if(drawable_name.find("Fish") != std::string::npos){
 			fishes.push_back(drawable.transform);
 			//fish don't have to be at z-value 0.f for visual reasons
 		}
@@ -301,7 +302,8 @@ void PlayMode::update(float elapsed) {
 	update_camera(elapsed);
 
 	//update checkpoint
-	update_checkpoint();
+	update_checkpoints();
+	if (activating_checkpoint) activate_checkpoint(curr_checkpoint_id, elapsed);
 
 	//spin fish
 	spin_fish(elapsed);
@@ -551,7 +553,7 @@ void PlayMode::sort_checkpoints() {
 	std::sort(checkpoints.begin(), checkpoints.end());
 }
 
-void PlayMode::update_checkpoint() {
+void PlayMode::update_checkpoints() {
 	if (curr_checkpoint_id == checkpoints.size() - 1) { //we already passed the last checkpoint! is it game over?
 		return; //we can revisit this later if we want the last checkpoint to end the game
 	}
@@ -565,7 +567,55 @@ void PlayMode::update_checkpoint() {
 
 		head_start = curr_checkpoint.position;
 		tail_start = head_start - glm::vec2(1.f, 0.f);
+		activating_checkpoint = true;
 	}
+}
+
+void PlayMode::activate_checkpoint(int checkpoint_id, float elapsed) {
+	assert(0 <= checkpoint_id && checkpoint_id < checkpoints.size());
+	PlayMode::checkpoint c = checkpoints[checkpoint_id];
+	assert(c.box_has_sides());
+
+	float rot_speed = 0.1f;
+	{ //make the front of the box fall down
+		glm::vec3 euler_rot = glm::vec3(elapsed * rot_speed, 0.f, 0.f);
+		c.box_front->rotation *= glm::quat(euler_rot);
+		c.box_front->position.y -= 1.f * elapsed;
+		c.box_front->position.z += 1.f * elapsed;
+	}
+	{ //make the left side of the box fall down
+		glm::vec3 euler_rot = glm::vec3(0.f, 0.f, elapsed * rot_speed);
+		c.box_left->rotation *= glm::quat(euler_rot);
+		c.box_left->position.x -= 1.f * elapsed;
+		c.box_left->position.y -= 1.f * elapsed;
+	}
+	{ //make the right side of the box fall down
+		glm::vec3 euler_rot = glm::vec3(0.f, 0.f, -elapsed * rot_speed);
+		c.box_right->rotation *= glm::quat(euler_rot);
+		c.box_right->position.x += 1.f * elapsed;
+		c.box_left->position.y -= 1.f * elapsed;
+	}
+	accumulated_time += elapsed;
+
+	if (accumulated_time >= 1.f) {
+		accumulated_time = 0.f;
+		activating_checkpoint = false;
+	}
+}
+
+bool PlayMode::checkpoint_find_sides(checkpoint* c) {
+	std::string prefix = c->name.substr(0, c->name.find(".Checkpoint"));
+
+	for (auto &drawable : scene.drawables) {
+		std::string drawable_name = drawable.transform->name;
+
+		if (drawable_name == prefix + ".Front") c->box_front = drawable.transform;
+		else if (drawable_name == prefix + ".Left") c->box_left = drawable.transform;
+		else if (drawable_name == prefix + ".Right") c->box_right = drawable.transform;
+
+		if (c->box_has_sides()) return true;
+	}
+	return false;
 }
 
 void PlayMode::spin_fish(float elapsed) {
