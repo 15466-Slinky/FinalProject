@@ -148,4 +148,5 @@ struct PlayMode : Mode {
 
 	//sound
 	std::shared_ptr< Sound::PlayingSample > bgm_loop;
+	std::shared_ptr< Sound::PlayingSample > spring_boing_SFX;
 };

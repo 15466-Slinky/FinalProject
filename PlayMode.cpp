@@ -45,6 +45,10 @@ Load< Sound::Sample > bgm_loop_sample(LoadTagDefault, []() -> Sound::Sample cons
 	return new Sound::Sample(data_path("Foam_Rubber.opus"));
 });
 
+Load< Sound::Sample > spring_boing_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("140867__juskiddink__boing.opus"));
+});
+
 PlayMode::PlayMode() : scene(*slinky_scene) {
 	// get pointer to each shape
 	for (auto &drawable : scene.drawables) {
@@ -122,7 +126,6 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 
 	//start music loop playing:
 	bgm_loop = Sound::loop(*bgm_loop_sample, 1.0f, 0.0f);
-
 }
 
 PlayMode::~PlayMode() {
@@ -179,6 +182,10 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		}else if (evt.key.keysym.sym == SDLK_SPACE) {
 			space.pressed = false;
+
+			// play spring sfx when release
+			spring_boing_SFX = Sound::play(*spring_boing_sample, 1.0f, 0.0f);
+
 			return true;
 		}
 	}
