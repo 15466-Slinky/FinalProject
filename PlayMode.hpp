@@ -129,6 +129,16 @@ struct PlayMode : Mode {
 	float k = 20.f; //spring constant
 	float grab_radius = 0.5f; //grabbable radius
 
+	float eat_dist = 3.0f;		// distance range that consider hit object
+	float sensing_dist = 20.0f;	// sensing distance, should be further than eat_dist
+	bool isNearFish = false;	// flag for near fish
+
+	float sense_counter = 0.0f;
+	float eat_counter = 0.0f;
+	float sense_SFX_cd = 5.0f;	// cool down for SFX, sense effect take around 2.0 sec
+	float eat_SFX_cd = 3.0f;
+
+
 	//camera motion
 	glm::vec3 camera_pos;
 	float camera_default_z = 50.f;
@@ -149,4 +159,7 @@ struct PlayMode : Mode {
 	//sound
 	std::shared_ptr< Sound::PlayingSample > bgm_loop;
 	std::shared_ptr< Sound::PlayingSample > spring_boing_SFX;
+	std::shared_ptr< Sound::PlayingSample > cat_meow_SFX;		// play when get to fish
+	std::shared_ptr< Sound::PlayingSample > cat_scream_SFX;		// play when fall from platform
+	std::shared_ptr< Sound::PlayingSample > nt_SFX;				// play when near fish
 };

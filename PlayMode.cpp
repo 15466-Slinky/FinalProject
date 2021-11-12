@@ -16,6 +16,7 @@
 #include <random>
 #include <cmath>
 
+//------------ Scene and mesh loading ---------- //
 GLuint slinky_meshes_for_lit_color_texture_program = 0;
 Load< MeshBuffer > slinky_meshes(LoadTagDefault, []() -> MeshBuffer const * {
 	MeshBuffer const *ret = new MeshBuffer(data_path("slinky.pnct"));
@@ -41,6 +42,7 @@ Load< Scene > slinky_scene(LoadTagDefault, []() -> Scene const * {
 	});
 });
 
+//--------------- Music and SFX loading --------------//
 Load< Sound::Sample > bgm_loop_sample(LoadTagDefault, []() -> Sound::Sample const * {
 	return new Sound::Sample(data_path("Foam_Rubber.opus"));
 });
@@ -49,6 +51,20 @@ Load< Sound::Sample > spring_boing_sample(LoadTagDefault, []() -> Sound::Sample 
 	return new Sound::Sample(data_path("140867__juskiddink__boing.opus"));
 });
 
+Load< Sound::Sample > cat_meow_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("110011__tuberatanka__cat-meow.opus"));
+});
+
+Load< Sound::Sample > cat_scream_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("415209__inspectorj__cat-screaming-a.opus"));
+});
+
+Load< Sound::Sample > nt_effect_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("gundam-newtype-flash-sound-effect.opus"));
+});
+
+
+//------------- Functions -----------------//
 PlayMode::PlayMode() : scene(*slinky_scene) {
 	// get pointer to each shape
 	for (auto &drawable : scene.drawables) {
@@ -83,6 +99,11 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	if(cat_head == nullptr) throw std::runtime_error("Cat head not found.");
 	if(cat_tail == nullptr) throw std::runtime_error("Cat tail not found.");
 	if(doughnut == nullptr) throw std::runtime_error("Doughnut not found.");
+
+
+	//TODO: reposition doughnut to test object interaction, need to remove later
+	//doughnut->position = cat_tail->position - glm::vec3(5.0f, 0.0f, 0.0f);
+
 
 	sort_checkpoints();
 	curr_checkpoint_id = -1; //we haven't reached any checkpoint yet
@@ -194,8 +215,49 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 void PlayMode::update(float elapsed) {
 	//respawn if player fell to their death
-	if (head_pos.y < DEATH_BOUND && tail_pos.y < DEATH_BOUND)
+	if (head_pos.y < DEATH_BOUND && tail_pos.y < DEATH_BOUND){
 		respawn();
+
+		//play cat scream
+		cat_scream_SFX = Sound::play(*cat_scream_sample, 1.0f, 0.0f);
+	}
+
+	// interaction with in-game objects
+	for(auto& fish : fishes){
+		
+		if(sense_counter < sense_SFX_cd){
+			// SFX cool down
+			sense_counter += elapsed;
+
+		}else{
+			if(glm::abs(glm::length(cat_head->position - fish->position) - sensing_dist) < 1.0f){
+				// near fish, play nt effect
+				nt_SFX = Sound::play(*nt_effect_sample, 1.0f, 0.0f);
+				// reset counter
+				sense_counter = 0.0f;
+			}
+		}
+		
+
+		if(eat_counter < eat_SFX_cd){
+			// SFX cool down
+			eat_counter += elapsed;
+
+		}else{
+			if(glm::abs(glm::length(cat_head->position - fish->position) - eat_dist) < 1.0f){
+				// near fish, play nt effect
+				cat_meow_SFX = Sound::play(*cat_meow_sample, 1.0f, 0.0f);
+				// reset counter
+				eat_counter = 0.0f;
+			}
+		}
+
+	}
+
+	
+
+	
+
 
 	// Apply gravity
 	head_vel.y -= elapsed * GRAVITY;
