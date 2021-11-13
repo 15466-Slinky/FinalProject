@@ -69,8 +69,6 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	// get pointer to each shape
 	for (auto &drawable : scene.drawables) {
 		std::string drawable_name = drawable.transform->name;
-		
-		printf("%s\n", drawable_name.c_str());
 
 		if(drawable_name == "CatHead"){
 			cat_head = drawable.transform;
@@ -650,12 +648,15 @@ void PlayMode::player_phys_update(float elapsed) {
 	
 	playerlength = space.pressed ? 20.f : 1.f;
 
+	float head_tail_dist = glm::distance(head_pos, tail_pos);
+
 	if (space.pressed) {
-		stretched = true;
+		if(head_tail_dist > 4.f)
+			stretched = true;
 	}
 	// If not pressing stretch, grabbing onto something, and the player has just recompressed, 
 	// let go and apply the velocity to both halves
-	else if (fixed_head && stretched && glm::distance(head_pos, tail_pos) <= 4.f) {
+	else if (fixed_head && stretched && head_tail_dist <= 4.f) {
 		stretched = false;
 
 		fixed_head = false;
@@ -691,7 +692,7 @@ void PlayMode::player_phys_update(float elapsed) {
 
 	// Air resistance only
 	head_vel *= 0.99f;
-	tail_vel *= 0.99f; 
+	tail_vel *= 0.90f; 
 }
 
 
