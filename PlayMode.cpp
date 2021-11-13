@@ -70,23 +70,33 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	for (auto &drawable : scene.drawables) {
 		std::string drawable_name = drawable.transform->name;
 		
+		printf("%s\n", drawable_name.c_str());
+
 		if(drawable_name == "CatHead"){
 			cat_head = drawable.transform;
 			assert(drawable.transform->position.z == 0.f);	// make sure on xy plane
-		}else if(drawable_name == "CatTail"){
+		}
+		else if(drawable_name == "CatTail"){
 			cat_tail = drawable.transform;
 			assert(drawable.transform->position.z == 0.f);
-		}else if(drawable_name == "Doughnut"){
+		}
+		else if(drawable_name == "Doughnut"){
 			doughnut = drawable.transform;
 			assert(drawable.transform->position.z == 0.f);
-		}else if(drawable_name.find("Platform") != std::string::npos){
+		}
+		else if(drawable_name.find("Platform") != std::string::npos){
 			platforms.push_back(drawable.transform);
 			assert(drawable.transform->position.z == 0.f);
-		}else if(drawable_name.find("Checkpoint") != std::string::npos){
+		}
+		else if(drawable_name.find("Checkpoint") != std::string::npos){
 			checkpoints.emplace_back(drawable_name, glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
 			//checkpoints don't have to be at z-value 0.f for visual reasons
 			assert(checkpoint_find_sides(&(checkpoints.back())));
-		}else if(drawable_name.find("Fish") != std::string::npos){
+		}
+		else if(drawable_name.find("Scratch.Post") != std::string::npos) {
+			grab_points.emplace_back(glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
+		}
+		else if(drawable_name.find("Fish") != std::string::npos){
 			fishes.push_back(drawable.transform);
 			//fish don't have to be at z-value 0.f for visual reasons
 		}
@@ -178,15 +188,13 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			space.downs += 1;
 			space.pressed = true;
 			return true;
-		} else if (evt.key.keysym.sym == SDLK_q) {
-			if (grab_ledge(tail_pos, 1.f + grab_radius)) {
-				fixed_tail = !fixed_tail;
-			}
-			return true;
 		} else if (evt.key.keysym.sym == SDLK_e) {
-			if (grab_ledge(head_pos, 1.f + grab_radius)) {
-				fixed_head = !fixed_head;
-			}
+			//if (grab_ledge(head_pos, 1.f + grab_radius)) {
+			//	fixed_head = !fixed_head;
+			//}
+
+			fixed_head = false;
+
 			return true;
 		}
 	} else if (evt.type == SDL_KEYUP) {
@@ -255,69 +263,13 @@ void PlayMode::update(float elapsed) {
 
 	}
 
-	
-
-	
-
-
-	// Apply gravity
-	head_vel.y -= elapsed * GRAVITY;
-	tail_vel.y -= elapsed * GRAVITY;
-	
-	playerlength = space.pressed ? 20.f : 1.f;
-	if (space.pressed) {
-		stretched = true;
-	}
-	else if (stretched && glm::distance(head_pos, tail_pos) <= 4.f) {
-		stretched = false;
-
-		fixed_head = false;
-		head_grounded = false;
-		head_vel += tail_vel * 0.5f;
-		tail_vel *= 0.5f;
-
-		printf("Recompressed %f\n", head_vel.x);
-	}
-
-
-	if (!fixed_head && !fixed_tail) {
-		free_movement(elapsed);
-	} else if (fixed_head && fixed_tail) {
-		head_vel.x = 0.f;
-		head_vel.y = 0.f;
-		tail_vel.x = 0.f;
-		tail_vel.y = 0.f;
-		std::cout << "you have stuck both your head and tail and cannot move\n";
-	} else if (fixed_head) {
-		fixed_head_movement(elapsed);
-	} else if (fixed_tail) {
-		fixed_tail_movement(elapsed);
-	}
-
-	// Do phyics update
-	head_pos += head_vel * elapsed;
-	tail_pos += tail_vel * elapsed;
-
-	//update camera
-	update_camera(elapsed);
 
 	//update checkpoint
 	update_checkpoints();
 	if (activating_checkpoint) activate_checkpoint(curr_checkpoint_id, elapsed);
 
-	//spin fish
-	spin_fish(elapsed);
-
-	// Check collision with the walls and adjust the velocities accordingly
-	collide_segments(head_pos, head_vel, 1.f, head_grounded);
-	collide_segments(tail_pos, tail_vel, 1.f, tail_grounded);
-
-	// Air resistance, or surface friction if the segment is sitting on the floor
-	//head_vel *= head_grounded ? .9f : .99f;
-	//tail_vel *= tail_grounded ? .9f : .99f; 
-	// Air resistance only
-	head_vel *= 0.99f;
-	tail_vel *= 0.99f; 
+	player_phys_update(elapsed);
+	animation_update(elapsed);
 
 	//reset button press counters:
 	left.downs = 0;
@@ -326,6 +278,22 @@ void PlayMode::update(float elapsed) {
 	down.downs = 0;
 	space.downs = 0;
 }
+
+/* Checks to see if the player has approached any grab points, and automatically grabs 
+   onto that point if they have */
+void PlayMode::do_auto_grab() {
+	for(Grab_Point &p : grab_points) {
+		float dist = glm::distance(p.position, head_pos);
+		
+		// Only perform a grab upon entry into the grab radius
+		if(dist <= GRAB_RADIUS && p.past_player_dist > GRAB_RADIUS) {
+			fixed_head = true;
+		}
+
+		p.past_player_dist = dist;
+	}
+}
+
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
 //	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
@@ -660,6 +628,76 @@ bool PlayMode::grab_ledge(glm::vec2& pos, float radius) {
 	return (!hits.empty());
 }
 
+
+
+
+void PlayMode::animation_update(float elapsed) {
+	//spin fish
+	spin_fish(elapsed);
+
+	//update camera
+	update_camera(elapsed);
+}
+
+
+
+
+
+void PlayMode::player_phys_update(float elapsed) {
+	// Apply gravity
+	head_vel.y -= elapsed * GRAVITY;
+	tail_vel.y -= elapsed * GRAVITY;
+	
+	playerlength = space.pressed ? 20.f : 1.f;
+
+	if (space.pressed) {
+		stretched = true;
+	}
+	// If not pressing stretch, grabbing onto something, and the player has just recompressed, 
+	// let go and apply the velocity to both halves
+	else if (fixed_head && stretched && glm::distance(head_pos, tail_pos) <= 4.f) {
+		stretched = false;
+
+		fixed_head = false;
+		head_grounded = false;
+		head_vel += tail_vel * 0.5f;
+		tail_vel *= 0.5f;
+
+		printf("Recompressed %f\n", head_vel.x);
+	}
+
+	do_auto_grab();
+
+
+	if (!fixed_head && !fixed_tail) {
+		free_movement(elapsed);
+	} else if (fixed_head && fixed_tail) {
+		head_vel.x = 0.f;
+		head_vel.y = 0.f;
+		tail_vel.x = 0.f;
+		tail_vel.y = 0.f;
+		std::cout << "you have stuck both your head and tail and cannot move\n";
+	} else if (fixed_head) {
+		fixed_head_movement(elapsed);
+	}
+
+	// Do phyics update
+	head_pos += head_vel * elapsed;
+	tail_pos += tail_vel * elapsed;
+
+	// Check collision with the walls and adjust the velocities accordingly
+	collide_segments(head_pos, head_vel, 1.f, head_grounded);
+	collide_segments(tail_pos, tail_vel, 1.f, tail_grounded);
+
+	// Air resistance only
+	head_vel *= 0.99f;
+	tail_vel *= 0.99f; 
+}
+
+
+
+
+
 void PlayMode::free_movement(float elapsed) {
 	// If the head is grounded, just stay still
 	if(head_grounded) {
@@ -696,8 +734,7 @@ void PlayMode::fixed_head_movement(float elapsed) {
 		tail_vel.x = 0.f;
 		tail_vel.y = 0.f;
 	}
-	//tail_vel.x = 0;
-	//tail_vel.y = 0;
+
 	if (left.pressed) tail_vel.x = -PLAYER_SPEED;
 	else if (right.pressed) tail_vel.x = PLAYER_SPEED;
 	if (up.pressed && tail_grounded) tail_vel.y = JUMP_SPEED;

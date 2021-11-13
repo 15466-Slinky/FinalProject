@@ -10,9 +10,10 @@
 #include <deque>
 
 #define PLAYER_SPEED 10.f
-#define JUMP_SPEED 10.f
+#define JUMP_SPEED 20.f
 #define CAMERA_SPEED 9.f
 #define GRAVITY 10.f
+#define GRAB_RADIUS 1.5f
 #define DEATH_BOUND -50.f
 
 struct PlayMode : Mode {
@@ -75,11 +76,24 @@ struct PlayMode : Mode {
 		}
 	};
 
+	struct Grab_Point {
+		glm::vec2 position;
+		float past_player_dist;
+		
+		Grab_Point(glm::vec2 position_) : position{position_} {
+			float past_player_dist = 0;
+		}
+	};
+
+
 	//----- helper functions ----- see Trello documentation for details
 	//collisions
 	std::vector<intersection> get_collisions(const circle &c, const std::vector<line_segment> &ls);
 	intersection get_capsule_collision(const circle &c, const line_segment &l, bool &is_hit);
 	std::vector<line_segment> get_lines(const Scene::Transform* platform);
+
+	void player_phys_update(float elapsed);
+	void animation_update(float elapsed);
 
 	//camera behavior
 	void update_camera(float elapsed);
@@ -98,6 +112,7 @@ struct PlayMode : Mode {
 	//----- movement updates -----
 	void collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded);
 	bool grab_ledge(glm::vec2& pos, float radius);
+	void do_auto_grab();
 	void free_movement(float elapsed);
 	void fixed_head_movement(float elapsed);
 	void fixed_tail_movement(float elapsed);
@@ -113,6 +128,8 @@ struct PlayMode : Mode {
 	checkpoint curr_checkpoint;
 	checkpoint next_checkpoint;
 
+	std::vector<Grab_Point> grab_points;
+
 	//input tracking:
 	struct Button {
 		uint8_t downs = 0;
@@ -125,10 +142,8 @@ struct PlayMode : Mode {
 	glm::vec2 head_start;
 	glm::vec2 tail_start;
 
-	glm::vec2 head_pos;
-	glm::vec2 head_vel;
-	glm::vec2 tail_pos;
-	glm::vec2 tail_vel;
+	glm::vec2 head_pos, tail_pos;
+	glm::vec2 head_vel, tail_vel;
 
 	bool head_grounded;
 	bool tail_grounded;
