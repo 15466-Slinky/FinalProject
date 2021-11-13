@@ -92,6 +92,7 @@ struct PlayMode : Mode {
 	intersection get_capsule_collision(const circle &c, const line_segment &l, bool &is_hit);
 	std::vector<line_segment> get_lines(const Scene::Transform* platform);
 
+	GLuint load_texture(std::string filename);
 	void player_phys_update(float elapsed);
 	void animation_update(float elapsed);
 
