@@ -81,7 +81,7 @@ struct PlayMode : Mode {
 		float past_player_dist;
 		
 		Grab_Point(glm::vec2 position_) : position{position_} {
-			float past_player_dist = 0;
+			past_player_dist = 0;
 		}
 	};
 
