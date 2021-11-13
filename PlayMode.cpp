@@ -51,12 +51,12 @@ Load< Sound::Sample > spring_boing_sample(LoadTagDefault, []() -> Sound::Sample 
 	return new Sound::Sample(data_path("140867__juskiddink__boing.opus"));
 });
 
-Load< Sound::Sample > cat_meow_sample(LoadTagDefault, []() -> Sound::Sample const * {
-	return new Sound::Sample(data_path("110011__tuberatanka__cat-meow.opus"));
+Load< Sound::Sample > cat_meow_sample(LoadTagDefault, []() -> Sound::Sample const* {
+	return new Sound::Sample(data_path("140867__juskiddink__boing.opus"));
 });
 
 Load< Sound::Sample > cat_scream_sample(LoadTagDefault, []() -> Sound::Sample const * {
-	return new Sound::Sample(data_path("415209__inspectorj__cat-screaming-a.opus"));
+	return new Sound::Sample(data_path("140867__juskiddink__boing.opus"));
 });
 
 Load< Sound::Sample > nt_effect_sample(LoadTagDefault, []() -> Sound::Sample const * {
@@ -317,6 +317,9 @@ void PlayMode::update(float elapsed) {
 	head_vel *= 0.99f;
 	tail_vel *= 0.99f; 
 
+	//reorient cat
+	turn_cat();
+
 	//reset button press counters:
 	left.downs = 0;
 	right.downs = 0;
@@ -575,6 +578,17 @@ void PlayMode::spin_fish(float elapsed) {
 		//spin along the x-axis
 		glm::vec3 euler_rot = glm::vec3(elapsed * spin_speed, 0.f, 0.f);
 		fishes[i]->rotation *= glm::quat(euler_rot);
+	}
+}
+
+void PlayMode::turn_cat() {
+	if (head_pos.x >= tail_pos.x) {
+		cat_head->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+		cat_tail->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	}
+	else {
+		cat_head->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
+		cat_tail->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
 	}
 }
 
