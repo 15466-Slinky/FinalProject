@@ -1,4 +1,5 @@
 #include "LitColorTextureProgram.hpp"
+#include "ColorTextureProgram.hpp"
 
 #include "PlayMode.hpp"
 
@@ -15,6 +16,7 @@
 
 #include <random>
 #include <cmath>
+#include <math.h>
 
 //------------ Scene and mesh loading ---------- //
 GLuint slinky_meshes_for_lit_color_texture_program = 0;
@@ -148,9 +150,103 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 
 	//start music loop playing:
 	bgm_loop = Sound::loop(*bgm_loop_sample, 1.0f, 0.0f);
+
+	//----- allocate OpenGL resources ----- from Game 0
+	{ //vertex buffer:
+		glGenBuffers(1, &vertex_buffer);
+		//for now, buffer will be un-filled.
+
+		GL_ERRORS(); //PARANOIA: print out any OpenGL errors that may have happened
+	}
+	{ //vertex array mapping buffer for color_texture_program:
+		//ask OpenGL to fill vertex_buffer_for_color_texture_program with the name of an unused vertex array object:
+		glGenVertexArrays(1, &vertex_buffer_for_color_texture_program);
+
+		//set vertex_buffer_for_color_texture_program as the current vertex array object:
+		glBindVertexArray(vertex_buffer_for_color_texture_program);
+
+		//set vertex_buffer as the source of glVertexAttribPointer() commands:
+		glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+
+		//set up the vertex array object to describe arrays of PongMode::Vertex:
+		glVertexAttribPointer(
+			color_texture_program.Position_vec4, //attribute
+			3, //size
+			GL_FLOAT, //type
+			GL_FALSE, //normalized
+			sizeof(Vertex), //stride
+			(GLbyte *)0 + 0 //offset
+		);
+		glEnableVertexAttribArray(color_texture_program.Position_vec4);
+		//[Note that it is okay to bind a vec3 input to a vec4 attribute -- the w component will be filled with 1.0 automatically]
+
+		glVertexAttribPointer(
+			color_texture_program.Color_vec4, //attribute
+			4, //size
+			GL_UNSIGNED_BYTE, //type
+			GL_TRUE, //normalized
+			sizeof(Vertex), //stride
+			(GLbyte *)0 + 4*3 //offset
+		);
+		glEnableVertexAttribArray(color_texture_program.Color_vec4);
+
+		glVertexAttribPointer(
+			color_texture_program.TexCoord_vec2, //attribute
+			2, //size
+			GL_FLOAT, //type
+			GL_FALSE, //normalized
+			sizeof(Vertex), //stride
+			(GLbyte *)0 + 4*3 + 4*1 //offset
+		);
+		glEnableVertexAttribArray(color_texture_program.TexCoord_vec2);
+
+		//done referring to vertex_buffer, so unbind it:
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		//done setting up vertex array object, so unbind it:
+		glBindVertexArray(0);
+
+		GL_ERRORS(); //PARANOIA: print out any OpenGL errors that may have happened
+	}
+	{ //solid white texture:
+		//ask OpenGL to fill white_tex with the name of an unused texture object:
+		glGenTextures(1, &white_tex);
+
+		//bind that texture object as a GL_TEXTURE_2D-type texture:
+		glBindTexture(GL_TEXTURE_2D, white_tex);
+
+		//upload a 1x1 image of solid white to the texture:
+		glm::uvec2 size = glm::uvec2(1,1);
+		std::vector< glm::u8vec4 > data(size.x*size.y, glm::u8vec4(0xff, 0xff, 0xff, 0xff));
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+
+		//set filtering and wrapping parameters:
+		//(it's a bit silly to mipmap a 1x1 texture, but I'm doing it because you may want to use this code to load different sizes of texture)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+		//since texture uses a mipmap and we haven't uploaded one, instruct opengl to make one for us:
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		//Okay, texture uploaded, can unbind it:
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		GL_ERRORS(); //PARANOIA: print out any OpenGL errors that may have happened
+	}
 }
 
 PlayMode::~PlayMode() {
+	//----- free OpenGL resources ----- from Game 0
+	glDeleteBuffers(1, &vertex_buffer);
+	vertex_buffer = 0;
+
+	glDeleteVertexArrays(1, &vertex_buffer_for_color_texture_program);
+	vertex_buffer_for_color_texture_program = 0;
+
+	glDeleteTextures(1, &white_tex);
+	white_tex = 0;
 }
 
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
@@ -216,6 +312,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 void PlayMode::update(float elapsed) {
 	//check if the game has ended, aka if we have eaten the donut
+	celebrate_update(elapsed);
 	if (glm::distance(head_pos, glm::vec2(doughnut->position)) < 1.f) {
 		game_over = true;
 	}
@@ -384,10 +481,10 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 				glm::u8vec4(0xff, 0xff, 0xff, 0x00));
 		};
 
-		draw_text(glm::vec2(-aspect + 0.1f, 0.0f), "GAME OVER: YOU WIN!", 0.09f);
-
-		draw_text(glm::vec2(-aspect + 0.1f,-0.9f), "(press WASD to change your total)", 0.09f);
+		draw_text(glm::vec2(-aspect + 0.5f, 0.0f), "GAME OVER: YOU WIN!", 0.4f);
 	}
+
+	celebrate_draw();
 }
 
 std::vector<PlayMode::intersection> PlayMode::get_collisions(const PlayMode::circle &c, const std::vector<PlayMode::line_segment> &ls) {
@@ -629,6 +726,80 @@ void PlayMode::spin_fish(float elapsed) {
 		glm::vec3 euler_rot = glm::vec3(elapsed * spin_speed, 0.f, 0.f);
 		fishes[i]->rotation *= glm::quat(euler_rot);
 	}
+}
+
+void PlayMode::celebrate_update(float elapsed) {
+	fireworks_countdown -= elapsed;
+
+	//release a new firework if we can
+	if (fireworks_countdown <= 0.f && fireworks.size() < max_fireworks_num) {
+		fireworks_countdown = fireworks_time_between;
+		fireworks.emplace_back(fireworks_speed, glm::vec2(camera_pos));
+	}
+
+	//update each firework
+	for (size_t i=0;i<fireworks.size();i++) {
+		PlayMode::firework f = fireworks[i];
+
+		f.update(elapsed);
+		if (f.age >= max_fireworks_age) {
+			fireworks.erase(fireworks.begin()+i);
+			i--;
+		}
+	}
+}
+
+void PlayMode::celebrate_draw() {
+	std::vector<PlayMode::Vertex> vertices;
+
+	std::cout << "We have " << fireworks.size() << " fireworks." << std::endl;
+
+	for (PlayMode::firework f : fireworks) {
+		std::cout << "Age: " << f.age << " Pos: " << glm::to_string(f.position) << " Dir: " << glm::to_string(f.direction) << std::endl;
+		//https://stackoverflow.com/questions/9879258/how-can-i-generate-random-points-on-a-circles-circumference-in-javascript
+		for (size_t i=0;i<3;i++) {
+			float x = cos(random() * M_PI * 2) * 0.1f + f.position.x;
+			float y = sin(random() * M_PI * 2) * 0.1f + f.position.y;
+			vertices.emplace_back(glm::vec3(x, y, 0.f), f.color, glm::vec2(0.5f, 0.5f));
+		}
+	}
+
+	std::cout << "We have " << vertices.size() << " vertices." << std::endl;
+
+	//use alpha blending:
+	glDisable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//don't use the depth test:
+	glDisable(GL_DEPTH_TEST);
+
+	//upload vertices to vertex_buffer:
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer); //set vertex_buffer as current
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices[0]), vertices.data(), GL_STREAM_DRAW); //upload vertices array
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//set color_texture_program as current program:
+	glUseProgram(color_texture_program.program);
+
+	//use the mapping vertex_buffer_for_color_texture_program to fetch vertex data:
+	glBindVertexArray(vertex_buffer_for_color_texture_program);
+
+	//bind the solid white texture to location zero so things will be drawn just with their colors:
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, white_tex);
+
+	//run the OpenGL pipeline:
+	glDrawArrays(GL_TRIANGLES, 0, GLsizei(vertices.size()));
+
+	//unbind the solid white texture:
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	//reset vertex array to none:
+	glBindVertexArray(0);
+
+	//reset current program to none:
+	glUseProgram(0);
+
+	GL_ERRORS(); //PARANOIA: print errors just in case we did something wrong.
 }
 
 void PlayMode::collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded) {

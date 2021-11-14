@@ -3,11 +3,13 @@
 #include "Scene.hpp"
 #include "Sound.hpp"
 
+#include "ColorTextureProgram.hpp"
 
 #include <glm/glm.hpp>
 
 #include <vector>
 #include <deque>
+#include <random>
 
 #define PLAYER_SPEED 10.f
 #define JUMP_SPEED 10.f
@@ -74,6 +76,34 @@ struct PlayMode : Mode {
 			return position.x < c.position.x;
 		}
 	};
+	struct firework {
+		float age;
+		float speed;
+		glm::vec2 position;
+		glm::vec2 direction;
+		glm::u8vec4 color;
+
+		firework(float speed_, glm::vec2 position_)
+		: age{0.f}, speed{speed_}, position{position_} {
+			//we want the firework to be in an upwards position so choose a random upwards direction
+			//https://stackoverflow.com/questions/686353/random-float-number-generation
+			float y = (static_cast <float> (rand()) / static_cast <float> (RAND_MAX)) + 0.1f; //random number between 0.1f and 1.1f
+			float x = static_cast <float> (rand()) / static_cast <float> (RAND_MAX); //another random number between 0.f and 1.f
+			if (rand() % 2 + 1 == 0) //with .5 probability, make x negative
+				x *= -1;
+
+			direction = glm::normalize(glm::vec2(x, y));
+
+			//now we want to randomize the color of the firework
+			color = glm::u8vec4(rand() % 256, rand() % 256, rand() % 256, 255);
+		}
+
+		void update(float elapsed) {
+			age += elapsed;
+			direction.y -= elapsed * GRAVITY;
+			position += elapsed * speed * direction;
+		}
+	};
 
 	//----- helper functions ----- see Trello documentation for details
 	//collisions
@@ -94,6 +124,10 @@ struct PlayMode : Mode {
 
 	//fish behavior
 	void spin_fish(float elapsed);
+
+	//end game behavior
+	void celebrate_update(float elapsed);
+	void celebrate_draw();
 
 	//----- movement updates -----
 	void collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded);
@@ -156,6 +190,14 @@ struct PlayMode : Mode {
 	glm::vec3 camera_pos;
 	float camera_default_z = 50.f;
 	float camera_zoomed_out = 1.f;
+
+	//fireworks
+	size_t max_fireworks_num = 20;
+	float max_fireworks_age = 10.f;
+	float fireworks_time_between = 1.f;
+	float fireworks_countdown = 0.f;
+	float fireworks_speed = 5.f;
+	std::vector<firework> fireworks;
 	
 	//scene
 	Scene scene;
@@ -175,4 +217,27 @@ struct PlayMode : Mode {
 	std::shared_ptr< Sound::PlayingSample > cat_meow_SFX;		// play when get to fish
 	std::shared_ptr< Sound::PlayingSample > cat_scream_SFX;		// play when fall from platform
 	std::shared_ptr< Sound::PlayingSample > nt_SFX;				// play when near fish
+
+	//----- opengl assets / helpers ------ from Game 0
+	//draw functions will work on vectors of vertices, defined as follows:
+	struct Vertex {
+		Vertex(glm::vec3 const &Position_, glm::u8vec4 const &Color_, glm::vec2 const &TexCoord_) :
+			Position(Position_), Color(Color_), TexCoord(TexCoord_) { }
+		glm::vec3 Position;
+		glm::u8vec4 Color;
+		glm::vec2 TexCoord;
+	};
+	static_assert(sizeof(Vertex) == 4*3 + 1*4 + 4*2, "PlayMode::Vertex should be packed");
+
+	//Shader program that draws transformed, vertices tinted with vertex colors:
+	ColorTextureProgram color_texture_program;
+
+	//Buffer used to hold vertex data during drawing:
+	GLuint vertex_buffer = 0;
+
+	//Vertex Array Object that maps buffer locations to color_texture_program attribute locations:
+	GLuint vertex_buffer_for_color_texture_program = 0;
+
+	//Solid white texture:
+	GLuint white_tex = 0;
 };
