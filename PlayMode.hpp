@@ -10,7 +10,7 @@
 #include <deque>
 
 #define PLAYER_SPEED 10.f
-#define JUMP_SPEED 20.f
+#define JUMP_SPEED 10.f
 #define CAMERA_SPEED 9.f
 #define GRAVITY 10.f
 #define GRAB_RADIUS 1.5f
@@ -127,6 +127,8 @@ struct PlayMode : Mode {
 	void fixed_tail_movement(float elapsed);
 	void respawn();
 	void turn_cat();
+	void update_body();
+	void animate_feet();
 
 	//----- game state -----
 	//terrain:
@@ -194,6 +196,7 @@ struct PlayMode : Mode {
 	Scene::Transform* doughnut = nullptr;
 	Scene::Transform* cat_head = nullptr;
 	Scene::Transform* cat_tail = nullptr;
+	Scene::Drawable* cat_body = nullptr;
 
 	//sound
 	std::shared_ptr< Sound::PlayingSample > bgm_loop;

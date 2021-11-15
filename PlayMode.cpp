@@ -95,12 +95,19 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	for (auto &drawable : scene.drawables) {
 		std::string drawable_name = drawable.transform->name;
 
+		printf("%s\n", drawable_name.c_str());
+
+
 		if(drawable_name == "CatHead"){
 			cat_head = drawable.transform;
 			assert(drawable.transform->position.z == 0.f);	// make sure on xy plane
 		}
 		else if(drawable_name == "CatTail"){
 			cat_tail = drawable.transform;
+			assert(drawable.transform->position.z == 0.f);
+		}
+		else if(drawable_name == "CatBody"){
+			cat_body = &drawable;
 			assert(drawable.transform->position.z == 0.f);
 		}
 		else if(drawable_name == "Doughnut"){
@@ -599,6 +606,11 @@ void PlayMode::turn_cat() {
 	}
 }
 
+void PlayMode::update_body() {
+	cat_body->transform->position = (cat_tail->position);
+}
+
+
 void PlayMode::collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded) {
 	grounded = false;
 
@@ -692,6 +704,7 @@ void PlayMode::animation_update(float elapsed) {
 
 	//reorient cat
 	turn_cat();
+	update_body();
 
 	//update camera
 	update_camera(elapsed);
