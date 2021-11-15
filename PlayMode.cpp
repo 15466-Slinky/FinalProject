@@ -255,7 +255,8 @@ void PlayMode::update(float elapsed) {
 	}
 
 	// interaction with in-game objects
-	for(auto& fish : fishes){
+	for (uint8_t i = 0; i < fishes.size(); ++i) {
+		Scene::Transform* fish = fishes[i];
 		
 		if(sense_counter < sense_SFX_cd){
 			// SFX cool down
@@ -265,6 +266,7 @@ void PlayMode::update(float elapsed) {
 			if(glm::abs(glm::length(cat_head->position - fish->position) - sensing_dist) < 1.0f){
 				// near fish, play nt effect
 				nt_SFX = Sound::play(*nt_effect_sample, 1.0f, 0.0f);
+
 				// reset counter
 				sense_counter = 0.0f;
 			}
@@ -279,6 +281,12 @@ void PlayMode::update(float elapsed) {
 			if(glm::abs(glm::length(cat_head->position - fish->position) - eat_dist) < 1.0f){
 				// near fish, play nt effect
 				cat_meow_SFX = Sound::play(*cat_meow_sample, 1.0f, 0.0f);
+
+				// "delete" fish
+				fish->scale = glm::vec3(0.0f, 0.0f, 0.0f);
+				fishes.erase(fishes.begin() + i);
+				i--;
+
 				// reset counter
 				eat_counter = 0.0f;
 			}
