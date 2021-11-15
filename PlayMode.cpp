@@ -53,11 +53,11 @@ Load< Sound::Sample > spring_boing_sample(LoadTagDefault, []() -> Sound::Sample 
 });
 
 Load< Sound::Sample > cat_meow_sample(LoadTagDefault, []() -> Sound::Sample const* {
-	return new Sound::Sample(data_path("140867__juskiddink__boing.opus"));
+	return new Sound::Sample(data_path("110011__tuberatanka__cat-meow"));
 });
 
 Load< Sound::Sample > cat_scream_sample(LoadTagDefault, []() -> Sound::Sample const * {
-	return new Sound::Sample(data_path("140867__juskiddink__boing.opus"));
+	return new Sound::Sample(data_path("415209__inspectorj__cat-screaming-a.opus"));
 });
 
 Load< Sound::Sample > nt_effect_sample(LoadTagDefault, []() -> Sound::Sample const * {
