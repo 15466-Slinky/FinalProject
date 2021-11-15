@@ -100,8 +100,8 @@ struct PlayMode : Mode {
 
 		void update(float elapsed) {
 			age += elapsed;
-			direction.y -= elapsed * GRAVITY;
-			position += elapsed * speed * direction;
+			//direction.y -= elapsed * GRAVITY;
+			position += elapsed * speed * direction * 0.001f;
 		}
 	};
 
@@ -127,7 +127,7 @@ struct PlayMode : Mode {
 
 	//end game behavior
 	void celebrate_update(float elapsed);
-	void celebrate_draw();
+	void celebrate_draw(glm::uvec2 const &drawable_size);
 
 	//----- movement updates -----
 	void collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded);

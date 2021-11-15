@@ -17,6 +17,7 @@
 #include <random>
 #include <cmath>
 #include <math.h>
+#include <time.h>
 
 //------------ Scene and mesh loading ---------- //
 GLuint slinky_meshes_for_lit_color_texture_program = 0;
@@ -68,6 +69,8 @@ Load< Sound::Sample > nt_effect_sample(LoadTagDefault, []() -> Sound::Sample con
 
 //------------- Functions -----------------//
 PlayMode::PlayMode() : scene(*slinky_scene) {
+	srand(time(NULL));
+
 	// get pointer to each shape
 	for (auto &drawable : scene.drawables) {
 		std::string drawable_name = drawable.transform->name;
@@ -459,7 +462,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	
 	GL_ERRORS();
 
-	if (game_over) { //use DrawLines to overlay some text:
+	/*if (game_over)*/ { //use DrawLines to overlay some text:
 		glDisable(GL_DEPTH_TEST);
 		float aspect = float(drawable_size.x) / float(drawable_size.y);
 		DrawLines lines(glm::mat4(
@@ -484,7 +487,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		draw_text(glm::vec2(-aspect + 0.5f, 0.0f), "GAME OVER: YOU WIN!", 0.4f);
 	}
 
-	celebrate_draw();
+	celebrate_draw(drawable_size);
 }
 
 std::vector<PlayMode::intersection> PlayMode::get_collisions(const PlayMode::circle &c, const std::vector<PlayMode::line_segment> &ls) {
@@ -734,12 +737,12 @@ void PlayMode::celebrate_update(float elapsed) {
 	//release a new firework if we can
 	if (fireworks_countdown <= 0.f && fireworks.size() < max_fireworks_num) {
 		fireworks_countdown = fireworks_time_between;
-		fireworks.emplace_back(fireworks_speed, glm::vec2(camera_pos));
+		fireworks.emplace_back(fireworks_speed, glm::vec2(0.f)); //maybe change later
 	}
 
 	//update each firework
 	for (size_t i=0;i<fireworks.size();i++) {
-		PlayMode::firework f = fireworks[i];
+		PlayMode::firework &f = fireworks[i];
 
 		f.update(elapsed);
 		if (f.age >= max_fireworks_age) {
@@ -749,7 +752,7 @@ void PlayMode::celebrate_update(float elapsed) {
 	}
 }
 
-void PlayMode::celebrate_draw() {
+void PlayMode::celebrate_draw(glm::uvec2 const &drawable_size) {
 	std::vector<PlayMode::Vertex> vertices;
 
 	std::cout << "We have " << fireworks.size() << " fireworks." << std::endl;
@@ -758,16 +761,45 @@ void PlayMode::celebrate_draw() {
 		std::cout << "Age: " << f.age << " Pos: " << glm::to_string(f.position) << " Dir: " << glm::to_string(f.direction) << std::endl;
 		//https://stackoverflow.com/questions/9879258/how-can-i-generate-random-points-on-a-circles-circumference-in-javascript
 		for (size_t i=0;i<3;i++) {
-			float x = cos(random() * M_PI * 2) * 0.1f + f.position.x;
-			float y = sin(random() * M_PI * 2) * 0.1f + f.position.y;
+			float x = cos((static_cast<float>(rand()) / RAND_MAX) * M_PI * 2.f) + f.position.x;
+			float y = sin((static_cast<float>(rand()) / RAND_MAX) * M_PI * 2.f) + f.position.y;
+
+			std::cout << "Vertex Pos: " << glm::to_string(glm::vec3(x, y, 0.f)) << std::endl;
+
 			vertices.emplace_back(glm::vec3(x, y, 0.f), f.color, glm::vec2(0.5f, 0.5f));
 		}
 	}
 
 	std::cout << "We have " << vertices.size() << " vertices." << std::endl;
 
+	//compute area that should be visible:
+	glm::vec2 scene_min = glm::vec2(-1.f, 1.f);
+	glm::vec2 scene_max = glm::vec2(-1.f, 1.f);
+
+	//compute window aspect ratio:
+	float aspect = drawable_size.x / float(drawable_size.y);
+	//we'll scale the x coordinate by 1.0 / aspect to make sure things stay square.
+
+	//compute scale factor for court given that...
+	float scale = std::min(
+		(2.0f * aspect) / (scene_max.x - scene_min.x), //... x must fit in [-aspect,aspect] ...
+		(2.0f) / (scene_max.y - scene_min.y) //... y must fit in [-1,1].
+	);
+
+	glm::vec2 center = 0.5f * (scene_max + scene_min);
+
+	//build matrix that scales and translates appropriately:
+	glm::mat4 court_to_clip = glm::mat4(
+		glm::vec4(scale / aspect, 0.0f, 0.0f, 0.0f),
+		glm::vec4(0.0f, scale, 0.0f, 0.0f),
+		glm::vec4(0.0f, 0.0f, 1.0f, 0.0f),
+		glm::vec4(-center.x * (scale / aspect), -center.y * scale, 0.0f, 1.0f)
+	);
+	//NOTE: glm matrices are specified in *Column-Major* order,
+	// so each line above is specifying a *column* of the matrix(!)
+
 	//use alpha blending:
-	glDisable(GL_BLEND);
+	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//don't use the depth test:
 	glDisable(GL_DEPTH_TEST);
@@ -779,6 +811,9 @@ void PlayMode::celebrate_draw() {
 
 	//set color_texture_program as current program:
 	glUseProgram(color_texture_program.program);
+
+	//upload OBJECT_TO_CLIP to the proper uniform location:
+	glUniformMatrix4fv(color_texture_program.OBJECT_TO_CLIP_mat4, 1, GL_FALSE, glm::value_ptr(court_to_clip));
 
 	//use the mapping vertex_buffer_for_color_texture_program to fetch vertex data:
 	glBindVertexArray(vertex_buffer_for_color_texture_program);
