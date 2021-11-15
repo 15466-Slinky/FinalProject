@@ -85,6 +85,13 @@ struct PlayMode : Mode {
 		}
 	};
 
+	struct Spring_Point {
+		glm::vec2 pos;
+		glm::vec2 vel;
+
+		Spring_Point(glm::vec2 pos_, glm::vec2 vel_): pos{pos_}, vel{vel_} {}
+	};
+
 
 	//----- helper functions ----- see Trello documentation for details
 	//collisions
@@ -95,6 +102,7 @@ struct PlayMode : Mode {
 	GLuint load_texture(std::string filename);
 	void player_phys_update(float elapsed);
 	void animation_update(float elapsed);
+	void interact_objects(float elapsed);
 
 	//camera behavior
 	void update_camera(float elapsed);
@@ -150,10 +158,13 @@ struct PlayMode : Mode {
 	bool head_grounded;
 	bool tail_grounded;
 
+	std::vector<Spring_Point> player_body;
+
 	// Indicates if the player has extended the player size, and the player hasn't yet compressed back to actual size
 	bool stretched = false;
 
 	float playerlength = 5.f; //length of spring
+	float maxlength = 20.f; //maximum length
 	float k = 20.f; //spring constant
 	float grab_radius = 0.5f; //grabbable radius
 

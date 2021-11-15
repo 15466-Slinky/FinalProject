@@ -254,46 +254,8 @@ void PlayMode::update(float elapsed) {
 		cat_scream_SFX = Sound::play(*cat_scream_sample, 1.0f, 0.0f);
 	}
 
-	// interaction with in-game objects
-	for (uint8_t i = 0; i < fishes.size(); ++i) {
-		Scene::Transform* fish = fishes[i];
-		
-		if(sense_counter < sense_SFX_cd){
-			// SFX cool down
-			sense_counter += elapsed;
-
-		}else{
-			if(glm::abs(glm::length(cat_head->position - fish->position) - sensing_dist) < 1.0f){
-				// near fish, play nt effect
-				nt_SFX = Sound::play(*nt_effect_sample, 1.0f, 0.0f);
-
-				// reset counter
-				sense_counter = 0.0f;
-			}
-		}
-		
-
-		if(eat_counter < eat_SFX_cd){
-			// SFX cool down
-			eat_counter += elapsed;
-
-		}else{
-			if(glm::abs(glm::length(cat_head->position - fish->position) - eat_dist) < 1.0f){
-				// near fish, play nt effect
-				cat_meow_SFX = Sound::play(*cat_meow_sample, 1.0f, 0.0f);
-
-				// "delete" fish
-				fish->scale = glm::vec3(0.0f, 0.0f, 0.0f);
-				fishes.erase(fishes.begin() + i);
-				i--;
-
-				// reset counter
-				eat_counter = 0.0f;
-			}
-		}
-
-	}
-
+	//interact with objects
+	interact_objects(elapsed);
 
 	//update checkpoint
 	update_checkpoints();
@@ -301,9 +263,6 @@ void PlayMode::update(float elapsed) {
 
 	player_phys_update(elapsed);
 	animation_update(elapsed);
-
-	//reorient cat
-	turn_cat();
 
 	//reset button press counters:
 	left.downs = 0;
@@ -327,7 +286,6 @@ void PlayMode::do_auto_grab() {
 		p.past_player_dist = dist;
 	}
 }
-
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
 //	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
@@ -673,27 +631,78 @@ bool PlayMode::grab_ledge(glm::vec2& pos, float radius) {
 	return (!hits.empty());
 }
 
+void PlayMode::interact_objects(float elapsed) {
+	// interaction with in-game objects
+	for (uint8_t i = 0; i < fishes.size(); ++i) {
+		Scene::Transform* fish = fishes[i];
+
+		if (sense_counter < sense_SFX_cd) {
+			// SFX cool down
+			sense_counter += elapsed;
+
+		}
+		else {
+			if (glm::abs(glm::length(cat_head->position - fish->position) - sensing_dist) < 1.0f) {
+				// near fish, play nt effect
+				nt_SFX = Sound::play(*nt_effect_sample, 1.0f, 0.0f);
+
+				// reset counter
+				sense_counter = 0.0f;
+			}
+		}
 
 
+		if (eat_counter < eat_SFX_cd) {
+			// SFX cool down
+			eat_counter += elapsed;
+
+		}
+		else {
+			if (glm::abs(glm::length(cat_head->position - fish->position) - eat_dist) < 1.0f) {
+				// near fish, play nt effect
+				cat_meow_SFX = Sound::play(*cat_meow_sample, 1.0f, 0.0f);
+
+				// "delete" fish
+				fish->scale = glm::vec3(0.0f, 0.0f, 0.0f);
+				fishes.erase(fishes.begin() + i);
+				i--;
+
+				// increase player length
+				maxlength += 20.f;
+				player_body.push_back(Spring_Point(head_pos, glm::vec2(0.f, 0.f)));
+				size_t num_springs = player_body.size();
+				glm::vec2 disp = (head_pos - tail_pos) / (float)num_springs;
+				for (uint8_t j = 0; j < num_springs; ++j) {
+					Spring_Point p = player_body[j];
+					p.pos = tail_pos + glm::vec2(disp.x * j, disp.y * j); //distribute evenly
+					p.vel = glm::vec2(0.f, 0.f); //reset velocity to avoid potential issues
+				}
+
+				// reset counter
+				eat_counter = 0.0f;
+			}
+		}
+
+	}
+}
 
 void PlayMode::animation_update(float elapsed) {
 	//spin fish
 	spin_fish(elapsed);
 
+	//reorient cat
+	turn_cat();
+
 	//update camera
 	update_camera(elapsed);
 }
-
-
-
-
 
 void PlayMode::player_phys_update(float elapsed) {
 	// Apply gravity
 	head_vel.y -= elapsed * GRAVITY;
 	tail_vel.y -= elapsed * GRAVITY;
 	
-	playerlength = space.pressed ? 20.f : 1.f;
+	playerlength = space.pressed ? maxlength : 1.f;
 
 	float head_tail_dist = glm::distance(head_pos, tail_pos);
 
@@ -741,10 +750,6 @@ void PlayMode::player_phys_update(float elapsed) {
 	head_vel *= 0.99f;
 	tail_vel *= 0.90f; 
 }
-
-
-
-
 
 void PlayMode::free_movement(float elapsed) {
 	// If the head is grounded, just stay still
