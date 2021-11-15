@@ -53,7 +53,7 @@ Load< Sound::Sample > spring_boing_sample(LoadTagDefault, []() -> Sound::Sample 
 });
 
 Load< Sound::Sample > cat_meow_sample(LoadTagDefault, []() -> Sound::Sample const* {
-	return new Sound::Sample(data_path("110011__tuberatanka__cat-meow"));
+	return new Sound::Sample(data_path("110011__tuberatanka__cat-meow.opus"));
 });
 
 Load< Sound::Sample > cat_scream_sample(LoadTagDefault, []() -> Sound::Sample const * {
