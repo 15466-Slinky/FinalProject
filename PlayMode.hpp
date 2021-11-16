@@ -127,6 +127,8 @@ struct PlayMode : Mode {
 	void fixed_tail_movement(float elapsed);
 	void respawn();
 	void turn_cat();
+	void update_body();
+	void animate_feet();
 	float timer = 0.0f;
 	float fixed_time = 0.015f;
 
@@ -199,6 +201,7 @@ struct PlayMode : Mode {
 	Scene::Transform* doughnut = nullptr;
 	Scene::Transform* cat_head = nullptr;
 	Scene::Transform* cat_tail = nullptr;
+	Scene::Drawable* cat_body = nullptr;
 
 	//sound
 	std::shared_ptr< Sound::PlayingSample > bgm_loop;
@@ -206,4 +209,15 @@ struct PlayMode : Mode {
 	std::shared_ptr< Sound::PlayingSample > cat_meow_SFX;		// play when get to fish
 	std::shared_ptr< Sound::PlayingSample > cat_scream_SFX;		// play when fall from platform
 	std::shared_ptr< Sound::PlayingSample > nt_SFX;				// play when near fish
+
+	
+	//----- opengl assets / helpers ------
+	
+	struct Vertex {
+		glm::vec3 Position;
+		glm::vec3 Normal;
+		glm::u8vec4 Color;
+		glm::vec2 TexCoord;
+	};
+	static_assert(sizeof(Vertex) == 3*4+3*4+4*1+2*4, "Vertex is packed.");
 };

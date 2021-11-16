@@ -14,6 +14,7 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+
 #include <random>
 #include <cmath>
 
@@ -80,9 +81,9 @@ GLuint PlayMode::load_texture(std::string filename) {
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data.data());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glGenerateMipmap(GL_TEXTURE_2D);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glGenerateMipmap(tex);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	return tex;
@@ -96,6 +97,8 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	for (auto &drawable : scene.drawables) {
 		std::string drawable_name = drawable.transform->name;
 
+
+
 		if(drawable_name == "CatHead"){
 			cat_head = drawable.transform;
 			assert(drawable.transform->position.z == 0.f);	// make sure on xy plane
@@ -104,11 +107,17 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 			cat_tail = drawable.transform;
 			assert(drawable.transform->position.z == 0.f);
 		}
+		else if(drawable_name == "CatBody"){
+			cat_body = &drawable;
+			assert(drawable.transform->position.z == 0.f);
+		}
 		else if(drawable_name == "Doughnut"){
 			doughnut = drawable.transform;
 			assert(drawable.transform->position.z == 0.f);
 		}
-		else if(drawable_name.find("Platform") != std::string::npos){
+		else if(drawable_name.find("Platform") != std::string::npos &&
+				// Don't actually collide with scratching posts
+				drawable_name.find("Scratch") == std::string::npos){
 			platforms.push_back(drawable.transform);
 			assert(drawable.transform->position.z == 0.f);
 
@@ -120,7 +129,9 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 			//checkpoints don't have to be at z-value 0.f for visual reasons
 			assert(checkpoint_find_sides(&(checkpoints.back())));
 		}
-		else if(drawable_name.find("Scratch") != std::string::npos && drawable_name.find("Post") != std::string::npos) {
+		else if(drawable_name.find("Scratch") != std::string::npos && 
+				drawable_name.find("Post") != std::string::npos) {
+			printf("%s\n", drawable_name.c_str());
 			grab_points.emplace_back(glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
 		}
 		else if(drawable_name.find("Fish") != std::string::npos){
@@ -285,7 +296,7 @@ void PlayMode::update(float elapsed) {
 void PlayMode::do_auto_grab() {
 	for(Grab_Point &p : grab_points) {
 		float dist = glm::distance(p.position, head_pos);
-		
+
 		// Only perform a grab upon entry into the grab radius
 		if(dist <= GRAB_RADIUS && p.past_player_dist > GRAB_RADIUS) {
 			fixed_head = true;
@@ -598,6 +609,7 @@ void PlayMode::spin_fish(float elapsed) {
 }
 
 void PlayMode::turn_cat() {
+	/*
 	if (!fixed_head) {
 		if (head_vel.x > 0.f && direction) { //using direction to avoid unnecessary writes to rotation
 			cat_head->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
@@ -616,7 +628,39 @@ void PlayMode::turn_cat() {
 		cat_tail->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
 		tail_direction = 1;
 	}
+	*/
+
+	glm::vec3 disp = cat_head->position - cat_tail->position;
+	glm::vec3 up(0.f, 1.f, 0.f);
+
+	cat_head->rotation = glm::quatLookAt(glm::normalize(disp), up) * glm::quat(up * (3.14159f / 2));
+	cat_tail->rotation = glm::quatLookAt(glm::normalize(disp), up) * glm::quat(up * (3.14159f / 2));
 }
+
+/* Dynamic player meshing (WIP) */
+void PlayMode::update_body() {
+	cat_body->transform->position = (cat_tail->position);
+
+	//vertices will be accumulated into this list and then uploaded+drawn at the end of this function:
+	std::vector< Vertex > vertices;
+			
+	glm::u8vec4 color(255, 255, 255, 255);
+
+	//vertices.emplace_back(glm::vec3(0.f, 0.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	//vertices.emplace_back(glm::vec3(0.f, 1.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	//vertices.emplace_back(glm::vec3(1.f, 0.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+
+	
+	//upload vertices to vertex_buffer:
+	glBindBuffer(GL_ARRAY_BUFFER, cat_body->pipeline.vao); //set vertex_buffer as current
+	////upload vertices array
+	//glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices[0]), vertices.data(), GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//cat_body->pipeline.count = 3;
+	cat_body->pipeline.count = 0;
+}
+
 
 void PlayMode::collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded) {
 	grounded = false;
@@ -663,7 +707,8 @@ void PlayMode::interact_objects(float elapsed) {
 		else {
 			if (glm::abs(glm::length(cat_head->position - fish->position) - sensing_dist) < 1.0f) {
 				// near fish, play nt effect
-				nt_SFX = Sound::play(*nt_effect_sample, 1.0f, 0.0f);
+				// Don't play the sense sound effect, it's confusing
+				//nt_SFX = Sound::play(*nt_effect_sample, 1.0f, 0.0f);
 
 				// reset counter
 				sense_counter = 0.0f;
@@ -677,7 +722,8 @@ void PlayMode::interact_objects(float elapsed) {
 
 		}
 		else {
-			if (glm::abs(glm::length(cat_head->position - fish->position) - eat_dist) < 1.0f) {
+			if (glm::abs(glm::length(cat_head->position - fish->position) - eat_dist) < 1.0f ||
+				glm::abs(glm::length(cat_tail->position - fish->position) - eat_dist) < 1.0f) {
 				// near fish, play nt effect
 				cat_meow_SFX = Sound::play(*cat_meow_sample, 1.0f, 0.0f);
 
@@ -711,6 +757,7 @@ void PlayMode::animation_update(float elapsed) {
 
 	//reorient cat
 	turn_cat();
+	update_body();
 
 	//update camera
 	update_camera(elapsed);
