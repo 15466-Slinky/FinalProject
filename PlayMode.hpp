@@ -10,7 +10,7 @@
 #include <deque>
 
 #define PLAYER_SPEED 10.f
-#define JUMP_SPEED 20.f
+#define JUMP_SPEED 10.f
 #define CAMERA_SPEED 9.f
 #define GRAVITY 10.f
 #define GRAB_RADIUS 1.5f

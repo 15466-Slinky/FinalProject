@@ -116,7 +116,7 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 			//checkpoints don't have to be at z-value 0.f for visual reasons
 			assert(checkpoint_find_sides(&(checkpoints.back())));
 		}
-		else if(drawable_name.find("Scratch.Post") != std::string::npos) {
+		else if(drawable_name.find("Scratch") != std::string::npos && drawable_name.find("Post") != std::string::npos) {
 			grab_points.emplace_back(glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
 		}
 		else if(drawable_name.find("Fish") != std::string::npos){
@@ -127,7 +127,7 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	
 	// check all loaded
 	if (platforms.empty()) throw std::runtime_error("Platforms not found.");
-	assert(platforms.size() == 12); // make sure platform count matched
+	assert(platforms.size() == 9); // make sure platform count matched
 	if (checkpoints.empty()) throw std::runtime_error("Checkpoints not found.");
 	assert(checkpoints.size() == 1); //make sure the checkpoint count matches
 	if(cat_head == nullptr) throw std::runtime_error("Cat head not found.");
@@ -517,7 +517,8 @@ void PlayMode::update_checkpoints() {
 	if (curr_checkpoint_id == checkpoints.size() - 1) { //we already passed the last checkpoint! is it game over?
 		return; //we can revisit this later if we want the last checkpoint to end the game
 	}
-	if (head_pos.x >= next_checkpoint.position.x || tail_pos.x >= next_checkpoint.position.x) { //if we are past the next checkpoint, then make it the new current checkpoint
+	//if we are past the next checkpoint, then make it the new current checkpoint
+	if (glm::distance(head_pos, next_checkpoint.position) <= 3.f || glm::distance(tail_pos, next_checkpoint.position) <= 3.f) {
 		curr_checkpoint_id += 1;
 		curr_checkpoint = checkpoints[curr_checkpoint_id];
 		curr_checkpoint.reached = true;
