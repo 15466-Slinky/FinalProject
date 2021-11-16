@@ -518,7 +518,7 @@ void PlayMode::update_checkpoints() {
 		return; //we can revisit this later if we want the last checkpoint to end the game
 	}
 	//if we are past the next checkpoint, then make it the new current checkpoint
-	if (glm::distance(head_pos, next_checkpoint.position) < 1.f || glm::distance(tail_pos, next_checkpoint.position) < 1.f) {
+	if (glm::distance(head_pos, next_checkpoint.position) <= 3.f || glm::distance(tail_pos, next_checkpoint.position) <= 3.f) {
 		curr_checkpoint_id += 1;
 		curr_checkpoint = checkpoints[curr_checkpoint_id];
 		curr_checkpoint.reached = true;
