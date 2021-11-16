@@ -590,13 +590,23 @@ void PlayMode::spin_fish(float elapsed) {
 }
 
 void PlayMode::turn_cat() {
-	if (head_pos.x >= tail_pos.x) {
-		cat_head->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-		cat_tail->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	if (!fixed_head) {
+		if (head_vel.x > 0.f && direction) { //using direction to avoid unnecessary writes to rotation
+			cat_head->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+			direction = 0;
+		}
+		else if (head_vel.x < 0.f && !direction) {
+			cat_head->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
+			direction = 1;
+		}
 	}
-	else {
-		cat_head->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
+	if (tail_vel.x > 0.f && tail_direction) {
+		cat_tail->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+		tail_direction = 0;
+	}
+	else if (tail_vel.x < 0.f && !tail_direction) {
 		cat_tail->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
+		tail_direction = 1;
 	}
 }
 
@@ -721,8 +731,8 @@ void PlayMode::player_phys_update(float elapsed) {
 
 		fixed_head = false;
 		head_grounded = false;
-		head_vel += tail_vel;// *0.5f;
-		//tail_vel *= 0.5f;
+		head_vel += tail_vel *0.5f;
+		tail_vel *= 0.5f;
 
 		printf("Recompressed %f\n", head_vel.x);
 	}
@@ -753,8 +763,8 @@ void PlayMode::player_phys_update(float elapsed) {
 	// Air resistance only FIXED UPDATE
 	timer += elapsed;
 	while (timer > fixed_time) {
-		head_vel *= 0.99f;
-		tail_vel *= 0.99f;
+		head_vel *= 0.995f;
+		tail_vel *= 0.995f;
 		timer -= fixed_time;
 	}
 }
