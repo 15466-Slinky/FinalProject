@@ -129,6 +129,8 @@ struct PlayMode : Mode {
 	void turn_cat();
 	void update_body();
 	void animate_feet();
+	float timer = 0.0f;
+	float fixed_time = 0.015f;
 
 	//----- game state -----
 	//terrain:
@@ -159,6 +161,9 @@ struct PlayMode : Mode {
 
 	bool head_grounded;
 	bool tail_grounded;
+
+	uint8_t direction = 0; //facing right
+	uint8_t tail_direction = 0;
 
 	std::vector<Spring_Point> player_body;
 

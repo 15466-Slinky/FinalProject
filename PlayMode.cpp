@@ -601,13 +601,23 @@ void PlayMode::spin_fish(float elapsed) {
 }
 
 void PlayMode::turn_cat() {
-	if (head_pos.x >= tail_pos.x) {
-		cat_head->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-		cat_tail->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	if (!fixed_head) {
+		if (head_vel.x > 0.f && direction) { //using direction to avoid unnecessary writes to rotation
+			cat_head->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+			direction = 0;
+		}
+		else if (head_vel.x < 0.f && !direction) {
+			cat_head->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
+			direction = 1;
+		}
 	}
-	else {
-		cat_head->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
+	if (tail_vel.x > 0.f && tail_direction) {
+		cat_tail->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+		tail_direction = 0;
+	}
+	else if (tail_vel.x < 0.f && !tail_direction) {
 		cat_tail->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
+		tail_direction = 1;
 	}
 }
 
@@ -738,6 +748,9 @@ void PlayMode::player_phys_update(float elapsed) {
 	// Apply gravity
 	head_vel.y -= elapsed * GRAVITY;
 	tail_vel.y -= elapsed * GRAVITY;
+	for (auto body : player_body) {
+		body.vel -= elapsed * GRAVITY;
+	}
 	
 	playerlength = space.pressed ? maxlength : 1.f;
 
@@ -754,7 +767,7 @@ void PlayMode::player_phys_update(float elapsed) {
 
 		fixed_head = false;
 		head_grounded = false;
-		head_vel += tail_vel * 0.5f;
+		head_vel += tail_vel *0.5f;
 		tail_vel *= 0.5f;
 
 		printf("Recompressed %f\n", head_vel.x);
@@ -783,9 +796,13 @@ void PlayMode::player_phys_update(float elapsed) {
 	collide_segments(head_pos, head_vel, 1.f, head_grounded);
 	collide_segments(tail_pos, tail_vel, 1.f, tail_grounded);
 
-	// Air resistance only
-	head_vel *= 0.99f;
-	tail_vel *= 0.99f; 
+	// Air resistance only FIXED UPDATE
+	timer += elapsed;
+	while (timer > fixed_time) {
+		head_vel *= 0.995f;
+		tail_vel *= 0.995f;
+		timer -= fixed_time;
+	}
 }
 
 void PlayMode::free_movement(float elapsed) {
