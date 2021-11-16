@@ -82,6 +82,7 @@ GLuint PlayMode::load_texture(std::string filename) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glGenerateMipmap(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	return tex;
@@ -110,6 +111,9 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 		else if(drawable_name.find("Platform") != std::string::npos){
 			platforms.push_back(drawable.transform);
 			assert(drawable.transform->position.z == 0.f);
+
+			GLuint tex = load_texture(data_path("floortex.png"));
+			drawable.pipeline.textures[0].texture = tex;
 		}
 		else if(drawable_name.find("Checkpoint") != std::string::npos){
 			checkpoints.emplace_back(drawable_name, glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
@@ -168,6 +172,8 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 		line_segments.emplace_back(lines[3]);	// bottom
 	}
 
+
+
 	// get pointer to camera
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	scene.cameras.emplace_back(&scene.transforms.back());
@@ -181,6 +187,8 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 
 	//start music loop playing:
 	bgm_loop = Sound::loop(*bgm_loop_sample, 1.0f, 0.0f);
+
+
 }
 
 PlayMode::~PlayMode() {
@@ -679,7 +687,7 @@ void PlayMode::interact_objects(float elapsed) {
 				i--;
 
 				// increase player length
-				maxlength += 20.f;
+				maxlength += 10.f;
 				player_body.push_back(Spring_Point(head_pos, glm::vec2(0.f, 0.f)));
 				size_t num_springs = player_body.size();
 				glm::vec2 disp = (head_pos - tail_pos) / (float)num_springs;

@@ -169,7 +169,7 @@ struct PlayMode : Mode {
 	bool stretched = false;
 
 	float playerlength = 5.f; //length of spring
-	float maxlength = 20.f; //maximum length
+	float maxlength = 10.f; //maximum length
 	float k = 20.f; //spring constant
 	float grab_radius = 0.5f; //grabbable radius
 
