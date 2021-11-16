@@ -127,6 +127,8 @@ struct PlayMode : Mode {
 	void fixed_tail_movement(float elapsed);
 	void respawn();
 	void turn_cat();
+	float timer = 0.0f;
+	float fixed_time = 0.01f;
 
 	//----- game state -----
 	//terrain:

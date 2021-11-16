@@ -701,6 +701,9 @@ void PlayMode::player_phys_update(float elapsed) {
 	// Apply gravity
 	head_vel.y -= elapsed * GRAVITY;
 	tail_vel.y -= elapsed * GRAVITY;
+	for (auto body : player_body) {
+		body.vel -= elapsed * GRAVITY;
+	}
 	
 	playerlength = space.pressed ? maxlength : 1.f;
 
@@ -717,8 +720,8 @@ void PlayMode::player_phys_update(float elapsed) {
 
 		fixed_head = false;
 		head_grounded = false;
-		head_vel += tail_vel * 0.5f;
-		tail_vel *= 0.5f;
+		head_vel += tail_vel;// *0.5f;
+		//tail_vel *= 0.5f;
 
 		printf("Recompressed %f\n", head_vel.x);
 	}
@@ -746,9 +749,13 @@ void PlayMode::player_phys_update(float elapsed) {
 	collide_segments(head_pos, head_vel, 1.f, head_grounded);
 	collide_segments(tail_pos, tail_vel, 1.f, tail_grounded);
 
-	// Air resistance only
-	head_vel *= 0.99f;
-	tail_vel *= 0.90f; 
+	// Air resistance only FIXED UPDATE
+	timer += elapsed;
+	while (timer > fixed_time) {
+		head_vel *= 0.99f;
+		tail_vel *= 0.99f;
+		timer -= fixed_time;
+	}
 }
 
 void PlayMode::free_movement(float elapsed) {
