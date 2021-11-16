@@ -207,14 +207,12 @@ struct PlayMode : Mode {
 
 	
 	//----- opengl assets / helpers ------
-
-	//draw functions will work on vectors of vertices, defined as follows:
+	
 	struct Vertex {
-		Vertex(glm::vec3 const &Position_, glm::u8vec4 const &Color_, glm::vec2 const &TexCoord_) :
-			Position(Position_), Color(Color_), TexCoord(TexCoord_) { }
 		glm::vec3 Position;
+		glm::vec3 Normal;
 		glm::u8vec4 Color;
 		glm::vec2 TexCoord;
 	};
-	static_assert(sizeof(Vertex) == 4*3 + 1*4 + 4*2, "MyMode::Vertex should be packed");
+	static_assert(sizeof(Vertex) == 3*4+3*4+4*1+2*4, "Vertex is packed.");
 };

@@ -288,7 +288,7 @@ void PlayMode::update(float elapsed) {
 void PlayMode::do_auto_grab() {
 	for(Grab_Point &p : grab_points) {
 		float dist = glm::distance(p.position, head_pos);
-		
+
 		// Only perform a grab upon entry into the grab radius
 		if(dist <= GRAB_RADIUS && p.past_player_dist > GRAB_RADIUS) {
 			fixed_head = true;
