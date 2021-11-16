@@ -84,7 +84,7 @@ GLuint PlayMode::load_texture(std::string filename) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
-	glGenerateTextureMipmap(tex);
+	glGenerateMipmap(tex);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -604,6 +604,7 @@ void PlayMode::spin_fish(float elapsed) {
 }
 
 void PlayMode::turn_cat() {
+	/*
 	if (!fixed_head) {
 		if (head_vel.x > 0.f && direction) { //using direction to avoid unnecessary writes to rotation
 			cat_head->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
@@ -622,6 +623,13 @@ void PlayMode::turn_cat() {
 		cat_tail->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
 		tail_direction = 1;
 	}
+	*/
+
+	glm::vec3 disp = cat_head->position - cat_tail->position;
+	glm::vec3 up(0.f, 1.f, 0.f);
+
+	cat_head->rotation = glm::quatLookAt(glm::normalize(disp), up) * glm::quat(up * (3.14159f / 2));
+	cat_tail->rotation = glm::quatLookAt(glm::normalize(disp), up) * glm::quat(up * (3.14159f / 2));
 }
 
 /* Dynamic player meshing (WIP) */
