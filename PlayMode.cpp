@@ -83,7 +83,7 @@ GLuint PlayMode::load_texture(std::string filename) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glGenerateMipmap(tex);
+	glGenerateMipmap(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	return tex;
@@ -137,6 +137,10 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 		else if(drawable_name.find("Fish") != std::string::npos){
 			fishes.push_back(drawable.transform);
 			//fish don't have to be at z-value 0.f for visual reasons
+		}
+		else if (drawable_name == "Background") {
+			GLuint tex = load_texture(data_path("bg.png"));
+			drawable.pipeline.textures[0].texture = tex;
 		}
 	}
 	
