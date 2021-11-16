@@ -14,6 +14,7 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+
 #include <random>
 #include <cmath>
 
@@ -114,7 +115,9 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 			doughnut = drawable.transform;
 			assert(drawable.transform->position.z == 0.f);
 		}
-		else if(drawable_name.find("Platform") != std::string::npos){
+		else if(drawable_name.find("Platform") != std::string::npos &&
+				// Don't actually collide with scratching posts
+				drawable_name.find("Scratch") == std::string::npos){
 			platforms.push_back(drawable.transform);
 			assert(drawable.transform->position.z == 0.f);
 		}
@@ -123,7 +126,8 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 			//checkpoints don't have to be at z-value 0.f for visual reasons
 			assert(checkpoint_find_sides(&(checkpoints.back())));
 		}
-		else if(drawable_name.find("Scratch.Post") != std::string::npos) {
+		else if(drawable_name.find("Scratch") != std::string::npos && 
+				drawable_name.find("Post") != std::string::npos) {
 			grab_points.emplace_back(glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
 		}
 		else if(drawable_name.find("Fish") != std::string::npos){
@@ -134,7 +138,7 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	
 	// check all loaded
 	if (platforms.empty()) throw std::runtime_error("Platforms not found.");
-	assert(platforms.size() == 16); // make sure platform count matched
+	assert(platforms.size() == 11); // make sure platform count matched
 	if (checkpoints.empty()) throw std::runtime_error("Checkpoints not found.");
 	assert(checkpoints.size() == 1); //make sure the checkpoint count matches
 	if(cat_head == nullptr) throw std::runtime_error("Cat head not found.");
@@ -608,6 +612,24 @@ void PlayMode::turn_cat() {
 
 void PlayMode::update_body() {
 	cat_body->transform->position = (cat_tail->position);
+
+	//vertices will be accumulated into this list and then uploaded+drawn at the end of this function:
+	std::vector< Vertex > vertices;
+			
+	glm::u8vec4 color(255, 255, 255, 255);
+
+	vertices.emplace_back(glm::vec3(0.f, 0.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	vertices.emplace_back(glm::vec3(0.f, 1.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	vertices.emplace_back(glm::vec3(1.f, 0.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+
+	
+	//upload vertices to vertex_buffer:
+	glBindBuffer(GL_ARRAY_BUFFER, cat_body->pipeline.vao); //set vertex_buffer as current
+	////upload vertices array
+	//glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices[0]), vertices.data(), GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	cat_body->pipeline.count = 3;
 }
 
 
@@ -761,7 +783,7 @@ void PlayMode::player_phys_update(float elapsed) {
 
 	// Air resistance only
 	head_vel *= 0.99f;
-	tail_vel *= 0.90f; 
+	tail_vel *= 0.99f; 
 }
 
 void PlayMode::free_movement(float elapsed) {

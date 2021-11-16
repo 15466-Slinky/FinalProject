@@ -10,7 +10,7 @@
 #include <deque>
 
 #define PLAYER_SPEED 10.f
-#define JUMP_SPEED 10.f
+#define JUMP_SPEED 20.f
 #define CAMERA_SPEED 9.f
 #define GRAVITY 10.f
 #define GRAB_RADIUS 1.5f
@@ -204,4 +204,17 @@ struct PlayMode : Mode {
 	std::shared_ptr< Sound::PlayingSample > cat_meow_SFX;		// play when get to fish
 	std::shared_ptr< Sound::PlayingSample > cat_scream_SFX;		// play when fall from platform
 	std::shared_ptr< Sound::PlayingSample > nt_SFX;				// play when near fish
+
+	
+	//----- opengl assets / helpers ------
+
+	//draw functions will work on vectors of vertices, defined as follows:
+	struct Vertex {
+		Vertex(glm::vec3 const &Position_, glm::u8vec4 const &Color_, glm::vec2 const &TexCoord_) :
+			Position(Position_), Color(Color_), TexCoord(TexCoord_) { }
+		glm::vec3 Position;
+		glm::u8vec4 Color;
+		glm::vec2 TexCoord;
+	};
+	static_assert(sizeof(Vertex) == 4*3 + 1*4 + 4*2, "MyMode::Vertex should be packed");
 };
