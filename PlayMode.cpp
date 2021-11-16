@@ -96,7 +96,6 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	for (auto &drawable : scene.drawables) {
 		std::string drawable_name = drawable.transform->name;
 
-		printf("%s\n", drawable_name.c_str());
 
 
 		if(drawable_name == "CatHead"){
@@ -128,6 +127,7 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 		}
 		else if(drawable_name.find("Scratch") != std::string::npos && 
 				drawable_name.find("Post") != std::string::npos) {
+			printf("%s\n", drawable_name.c_str());
 			grab_points.emplace_back(glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
 		}
 		else if(drawable_name.find("Fish") != std::string::npos){
@@ -138,7 +138,7 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	
 	// check all loaded
 	if (platforms.empty()) throw std::runtime_error("Platforms not found.");
-	assert(platforms.size() == 11); // make sure platform count matched
+	assert(platforms.size() == 9); // make sure platform count matched
 	if (checkpoints.empty()) throw std::runtime_error("Checkpoints not found.");
 	assert(checkpoints.size() == 1); //make sure the checkpoint count matches
 	if(cat_head == nullptr) throw std::runtime_error("Cat head not found.");
@@ -528,7 +528,8 @@ void PlayMode::update_checkpoints() {
 	if (curr_checkpoint_id == checkpoints.size() - 1) { //we already passed the last checkpoint! is it game over?
 		return; //we can revisit this later if we want the last checkpoint to end the game
 	}
-	if (head_pos.x >= next_checkpoint.position.x || tail_pos.x >= next_checkpoint.position.x) { //if we are past the next checkpoint, then make it the new current checkpoint
+	//if we are past the next checkpoint, then make it the new current checkpoint
+	if (glm::distance(head_pos, next_checkpoint.position) <= 3.f || glm::distance(tail_pos, next_checkpoint.position) <= 3.f) {
 		curr_checkpoint_id += 1;
 		curr_checkpoint = checkpoints[curr_checkpoint_id];
 		curr_checkpoint.reached = true;
@@ -678,7 +679,8 @@ void PlayMode::interact_objects(float elapsed) {
 		else {
 			if (glm::abs(glm::length(cat_head->position - fish->position) - sensing_dist) < 1.0f) {
 				// near fish, play nt effect
-				nt_SFX = Sound::play(*nt_effect_sample, 1.0f, 0.0f);
+				// Don't play the sense sound effect, it's confusing
+				//nt_SFX = Sound::play(*nt_effect_sample, 1.0f, 0.0f);
 
 				// reset counter
 				sense_counter = 0.0f;
