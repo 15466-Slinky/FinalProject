@@ -20,13 +20,13 @@
 //------------ Scene and mesh loading ---------- //
 GLuint slinky_meshes_for_lit_color_texture_program = 0;
 Load< MeshBuffer > slinky_meshes(LoadTagDefault, []() -> MeshBuffer const * {
-	MeshBuffer const *ret = new MeshBuffer(data_path("slinky.pnct"));
+	MeshBuffer const *ret = new MeshBuffer(data_path("slinky_tutorial.pnct"));
 	slinky_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret;
 });
 
 Load< Scene > slinky_scene(LoadTagDefault, []() -> Scene const * {
-	return new Scene(data_path("slinky.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+	return new Scene(data_path("slinky_tutorial.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
 		Mesh const &mesh = slinky_meshes->lookup(mesh_name);
 
 		//get 4 pairs of shapes
@@ -123,17 +123,25 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 			fishes.push_back(drawable.transform);
 			//fish don't have to be at z-value 0.f for visual reasons
 		}
+		else if (drawable_name.find("Text") != std::string::npos) {
+			texts.push_back(drawable.transform);
+		}
+		else if (drawable_name.find("Textbox") != std::string::npos) {
+			textboxes.push_back(drawable.transform);
+		}
+		// CHANGE
 	}
 	
 	// check all loaded
 	if (platforms.empty()) throw std::runtime_error("Platforms not found.");
-	assert(platforms.size() == 12); // make sure platform count matched
+	// assert(platforms.size() == 12); // make sure platform count matched
+	// CHANGE
 	if (checkpoints.empty()) throw std::runtime_error("Checkpoints not found.");
 	assert(checkpoints.size() == 1); //make sure the checkpoint count matches
 	if(cat_head == nullptr) throw std::runtime_error("Cat head not found.");
 	if(cat_tail == nullptr) throw std::runtime_error("Cat tail not found.");
-	if(doughnut == nullptr) throw std::runtime_error("Doughnut not found.");
-
+	// if(doughnut == nullptr) throw std::runtime_error("Doughnut not found.");
+	// CHANGE
 
 	//TODO: reposition doughnut to test object interaction, need to remove later
 	//doughnut->position = cat_tail->position - glm::vec3(5.0f, 0.0f, 0.0f);

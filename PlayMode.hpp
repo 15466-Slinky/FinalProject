@@ -178,6 +178,8 @@ struct PlayMode : Mode {
 	//scene objects
 	std::vector<Scene::Transform*> platforms;
 	std::vector<Scene::Transform*> fishes;
+	std::vector<Scene::Transform*> texts;
+	std::vector<Scene::Transform*> textboxes;
 		
 	Scene::Transform* doughnut = nullptr;
 	Scene::Transform* cat_head = nullptr;
