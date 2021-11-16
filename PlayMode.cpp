@@ -81,8 +81,11 @@ GLuint PlayMode::load_texture(std::string filename) {
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data.data());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+	glGenerateTextureMipmap(tex);
+
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	return tex;
@@ -621,6 +624,7 @@ void PlayMode::turn_cat() {
 	}
 }
 
+/* Dynamic player meshing (WIP) */
 void PlayMode::update_body() {
 	cat_body->transform->position = (cat_tail->position);
 
@@ -629,9 +633,9 @@ void PlayMode::update_body() {
 			
 	glm::u8vec4 color(255, 255, 255, 255);
 
-	vertices.emplace_back(glm::vec3(0.f, 0.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
-	vertices.emplace_back(glm::vec3(0.f, 1.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
-	vertices.emplace_back(glm::vec3(1.f, 0.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	//vertices.emplace_back(glm::vec3(0.f, 0.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	//vertices.emplace_back(glm::vec3(0.f, 1.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	//vertices.emplace_back(glm::vec3(1.f, 0.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
 
 	
 	//upload vertices to vertex_buffer:
@@ -704,7 +708,8 @@ void PlayMode::interact_objects(float elapsed) {
 
 		}
 		else {
-			if (glm::abs(glm::length(cat_head->position - fish->position) - eat_dist) < 1.0f) {
+			if (glm::abs(glm::length(cat_head->position - fish->position) - eat_dist) < 1.0f ||
+				glm::abs(glm::length(cat_tail->position - fish->position) - eat_dist) < 1.0f) {
 				// near fish, play nt effect
 				cat_meow_SFX = Sound::play(*cat_meow_sample, 1.0f, 0.0f);
 
