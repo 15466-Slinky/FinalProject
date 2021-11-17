@@ -538,7 +538,7 @@ void PlayMode::collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bo
 
 bool PlayMode::grab_ledge(glm::vec2& pos, float radius) {
 	CollisionManager::circle c(pos, radius);
-	std::vector<CollisionManager::intersection> hits = collision_manager.get_collisions(c);
+	std::vector<CollisionManager::intersection> hits = collision_manager.get_collisions_all(c);
 	return (!hits.empty());
 }
 

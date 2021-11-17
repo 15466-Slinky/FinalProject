@@ -5,15 +5,7 @@
 #include <cmath>
 
 CollisionManager::CollisionManager(std::vector<Scene::Transform*> platforms) {
-	for(auto p : platforms) {
-		std::vector<CollisionManager::line_segment> lines = get_lines(p);
-		assert(lines.size() == 4);
-		
-		line_segments.emplace_back(lines[0]);	// left
-		line_segments.emplace_back(lines[1]);	// right
-		line_segments.emplace_back(lines[2]);	// up
-		line_segments.emplace_back(lines[3]);	// bottom
-	}
+	get_lines_all(platforms);
 }
 
 //returns line segments corresponding to the 4 sides of a platform
@@ -53,8 +45,22 @@ std::vector<CollisionManager::line_segment> CollisionManager::get_lines(const Sc
 	return lines;
 }
 
+std::vector<CollisionManager::line_segment> CollisionManager::get_lines_all(const std::vector<Scene::Transform*> platforms){
+	for(auto p : platforms) {
+		std::vector<CollisionManager::line_segment> lines = get_lines(p);
+		assert(lines.size() == 4);
+		
+		line_segments.emplace_back(lines[0]);	// left
+		line_segments.emplace_back(lines[1]);	// right
+		line_segments.emplace_back(lines[2]);	// up
+		line_segments.emplace_back(lines[3]);	// bottom
+	}
+
+	return line_segments;
+}
+
 //performs circle-line-segment collisions on a circle and the line_segments and returns the points of intersection
-std::vector<CollisionManager::intersection> CollisionManager::get_collisions(const CollisionManager::circle &c) {
+std::vector<CollisionManager::intersection> CollisionManager::get_collisions_all(const CollisionManager::circle &c) {
 	//https://stackoverflow.com/questions/1073336/circle-line-segment-collision-detection-algorithm
 	std::vector<CollisionManager::intersection> collision_data;
 
