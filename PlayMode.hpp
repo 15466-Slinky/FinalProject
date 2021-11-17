@@ -2,7 +2,7 @@
 
 #include "Scene.hpp"
 #include "Sound.hpp"
-
+#include "Collisions.hpp"
 
 #include <glm/glm.hpp>
 
@@ -26,34 +26,6 @@ struct PlayMode : Mode {
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
 	//----- helper structs -----
-	struct line_segment {
-		glm::vec2 ep1;
-		glm::vec2 ep2;
-		glm::vec2 surface_normal;
-
-		line_segment(glm::vec2 ep1_, glm::vec2 ep2_, glm::vec2 surface_normal_) 
-		: ep1{ep1_}, ep2{ep2_},
-		  surface_normal{glm::normalize(surface_normal_)} {
-			assert(ep1 != ep2); //we do not allow degenerate line segments
-			assert(surface_normal != glm::vec2(0.f)); //do not allow zero-vector to be a surface normal
-		}
-	};
-	struct circle {
-		glm::vec2 center;
-		float radius;
-
-		circle(glm::vec2 center_, float radius_) : center{center_}, radius{radius_} {
-			assert(radius_ != 0.f); //we do not allow degenerate circles
-		}
-	};
-	struct intersection {
-		glm::vec2 point_of_intersection;
-		glm::vec2 surface_normal;
-
-		intersection(glm::vec2 point_of_intersection_, glm::vec2 surface_normal_)
-		: point_of_intersection{point_of_intersection_},
-		  surface_normal{glm::normalize(surface_normal_)} {}
-	};
 	struct checkpoint {
 		std::string name;
 		bool reached;
@@ -92,12 +64,7 @@ struct PlayMode : Mode {
 		Spring_Point(glm::vec2 pos_, glm::vec2 vel_): pos{pos_}, vel{vel_} {}
 	};
 
-
 	//----- helper functions ----- see Trello documentation for details
-	//collisions
-	std::vector<intersection> get_collisions(const circle &c, const std::vector<line_segment> &ls);
-	intersection get_capsule_collision(const circle &c, const line_segment &l, bool &is_hit);
-	std::vector<line_segment> get_lines(const Scene::Transform* platform);
 
 	GLuint load_texture(std::string filename);
 	void player_phys_update(float elapsed);
@@ -133,8 +100,8 @@ struct PlayMode : Mode {
 	float fixed_time = 0.015f;
 
 	//----- game state -----
-	//terrain:
-	std::vector<line_segment> line_segments; //for platforms
+	//collisions
+	CollisionManager collision_manager;
 
 	//checkpoints:
 	std::vector<checkpoint> checkpoints; //checkpoints should be sorted by x coordinate
