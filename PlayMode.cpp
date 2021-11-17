@@ -154,7 +154,6 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	//TODO: reposition doughnut to test object interaction, need to remove later
 	//doughnut->position = cat_tail->position - glm::vec3(5.0f, 0.0f, 0.0f);
 
-
 	sort_checkpoints();
 	curr_checkpoint_id = -1; //we haven't reached any checkpoint yet
 	next_checkpoint = checkpoints[0];
@@ -176,21 +175,14 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 
 	collision_manager = CollisionManager(platforms);
 
-	// get pointer to camera
+	//check cameras and make the dynamic camera
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
-	scene.cameras.emplace_back(&scene.transforms.back());
-	
-	camera = &scene.cameras.front();	// used perspective camera, may not need to change fov
-	camera -> fovy = glm::radians(35.f);		// adjust fov
-	//camera -> fovy = glm::radians(60.0f);
-	//camera -> near = 0.01f;
-	camera_pos = glm::vec3(head_pos.x, head_pos.y, camera_default_z);
-	camera->transform->position = camera_pos;
+		scene.cameras.emplace_back(&scene.transforms.back());
+	camera = &scene.cameras.front();
+	dynamic_camera = DynamicCamera(camera, glm::vec3(0.f), 9.f, 50.f);
 
 	//start music loop playing:
 	bgm_loop = Sound::loop(*bgm_loop_sample, 1.0f, 0.0f);
-
-
 }
 
 PlayMode::~PlayMode() {
@@ -334,9 +326,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	cat_tail->position.x = tail_pos.x;
 	cat_tail->position.y = tail_pos.y;
 	
-	//draw scene and update camera
-	camera->transform->position = camera_pos;
-	camera->aspect = float(drawable_size.x) / float(drawable_size.y);
+	dynamic_camera.draw(drawable_size);
 
 	//set up light type and position for lit_color_texture_program:
 	// TODO: consider using the Light(s) in the scene to do this
@@ -356,24 +346,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	scene.draw(*camera);
 	
 	GL_ERRORS();
-}
-
-void PlayMode::update_camera(float elapsed) { //numbers in this function can be changed later for fine-tuning
-	glm::vec2 camera_pos_2d = glm::vec2(camera_pos.x, camera_pos.y);
-	glm::vec2 camera_dir_2d = ((head_pos + tail_pos) / 2.f) - camera_pos_2d;
-
-	camera_pos.x += camera_dir_2d.x * elapsed * CAMERA_SPEED;
-	camera_pos.y += camera_dir_2d.y * elapsed * CAMERA_SPEED;
-	
-	if (space.pressed) { //zoom out if player is stretched far enough
-		float zoom_out_ratio = std::max(1.f, glm::distance(head_pos, tail_pos) / playerlength);
-		camera_zoomed_out = zoom_out_ratio;
-		camera_pos.z = camera_default_z * camera_zoomed_out;
-	}
-	else if (camera_pos.z > camera_default_z){ //zoom back in over time
-		camera_zoomed_out = std::max(1.f, camera_zoomed_out - elapsed * CAMERA_SPEED / 5.f);
-		camera_pos.z = camera_default_z * camera_zoomed_out;
-	}
 }
 
 void PlayMode::sort_checkpoints() {
@@ -608,7 +580,7 @@ void PlayMode::animation_update(float elapsed) {
 	update_body();
 
 	//update camera
-	update_camera(elapsed);
+	dynamic_camera.update(elapsed, (head_pos + tail_pos) / 2.f, space.pressed, glm::distance(head_pos, tail_pos) / playerlength);
 }
 
 void PlayMode::player_phys_update(float elapsed) {
