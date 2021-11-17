@@ -3,6 +3,7 @@
 #include "Scene.hpp"
 #include "Sound.hpp"
 #include "Collisions.hpp"
+#include "DynamicCamera.hpp"
 
 #include <glm/glm.hpp>
 
@@ -11,7 +12,6 @@
 
 #define PLAYER_SPEED 10.f
 #define JUMP_SPEED 10.f
-#define CAMERA_SPEED 9.f
 #define GRAVITY 10.f
 #define GRAB_RADIUS 1.5f
 #define DEATH_BOUND -50.f
@@ -71,9 +71,6 @@ struct PlayMode : Mode {
 	void animation_update(float elapsed);
 	void interact_objects(float elapsed);
 
-	//camera behavior
-	void update_camera(float elapsed);
-
 	//checkpoint behavior
 	void sort_checkpoints();
 	void update_checkpoints();
@@ -102,6 +99,9 @@ struct PlayMode : Mode {
 	//----- game state -----
 	//collisions
 	CollisionManager collision_manager;
+
+	//dynamic camera
+	DynamicCamera dynamic_camera;
 
 	//checkpoints:
 	std::vector<checkpoint> checkpoints; //checkpoints should be sorted by x coordinate
@@ -150,12 +150,6 @@ struct PlayMode : Mode {
 	float eat_counter = 0.0f;
 	float sense_SFX_cd = 5.0f;	// cool down for SFX, sense effect take around 2.0 sec
 	float eat_SFX_cd = 3.0f;
-
-
-	//camera motion
-	glm::vec3 camera_pos;
-	float camera_default_z = 50.f;
-	float camera_zoomed_out = 1.f;
 	
 	//scene
 	Scene scene;
@@ -176,7 +170,6 @@ struct PlayMode : Mode {
 	std::shared_ptr< Sound::PlayingSample > cat_meow_SFX;		// play when get to fish
 	std::shared_ptr< Sound::PlayingSample > cat_scream_SFX;		// play when fall from platform
 	std::shared_ptr< Sound::PlayingSample > nt_SFX;				// play when near fish
-
 	
 	//----- opengl assets / helpers ------
 	
