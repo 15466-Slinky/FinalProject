@@ -455,6 +455,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	glClearDepth(1.0f); //1.0 is actually the default value to clear the depth buffer to, but FYI you can change it.
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	glEnable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS); //this is the default depth comparison function, but FYI you can change it.
 
@@ -463,6 +464,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	GL_ERRORS();
 
 	/*if (game_over)*/ { //use DrawLines to overlay some text:
+		glDisable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
 		float aspect = float(drawable_size.x) / float(drawable_size.y);
 		DrawLines lines(glm::mat4(
@@ -476,12 +478,12 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			lines.draw_text(text,
 				glm::vec3(at.x, at.y, 0.0),
 				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-				glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+				glm::u8vec4(0x00, 0x00, 0x00, 0xff));
 			float ofs = 2.0f / drawable_size.y;
 			lines.draw_text(text,
 				glm::vec3(at.x + ofs, at.y + ofs, 0.0),
 				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-				glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+				glm::u8vec4(0xff, 0xff, 0xff, 0xff));
 		};
 
 		draw_text(glm::vec2(-aspect + 0.5f, 0.0f), "GAME OVER: YOU WIN!", 0.4f);
@@ -737,7 +739,7 @@ void PlayMode::celebrate_update(float elapsed) {
 	//release a new firework if we can
 	if (fireworks_countdown <= 0.f && fireworks.size() < max_fireworks_num) {
 		fireworks_countdown = fireworks_time_between;
-		fireworks.emplace_back(fireworks_speed, glm::vec2(0.f)); //maybe change later
+		fireworks.emplace_back(fireworks_speed, glm::vec2(0.f));
 	}
 
 	//update each firework
@@ -755,52 +757,41 @@ void PlayMode::celebrate_update(float elapsed) {
 void PlayMode::celebrate_draw(glm::uvec2 const &drawable_size) {
 	std::vector<PlayMode::Vertex> vertices;
 
-	std::cout << "We have " << fireworks.size() << " fireworks." << std::endl;
-
 	for (PlayMode::firework f : fireworks) {
-		std::cout << "Age: " << f.age << " Pos: " << glm::to_string(f.position) << " Dir: " << glm::to_string(f.direction) << std::endl;
 		//https://stackoverflow.com/questions/9879258/how-can-i-generate-random-points-on-a-circles-circumference-in-javascript
 		for (size_t i=0;i<3;i++) {
 			float x = cos((static_cast<float>(rand()) / RAND_MAX) * M_PI * 2.f) + f.position.x;
 			float y = sin((static_cast<float>(rand()) / RAND_MAX) * M_PI * 2.f) + f.position.y;
-
-			std::cout << "Vertex Pos: " << glm::to_string(glm::vec3(x, y, 0.f)) << std::endl;
-
 			vertices.emplace_back(glm::vec3(x, y, 0.f), f.color, glm::vec2(0.5f, 0.5f));
 		}
 	}
 
-	std::cout << "We have " << vertices.size() << " vertices." << std::endl;
-
 	//compute area that should be visible:
-	glm::vec2 scene_min = glm::vec2(-1.f, 1.f);
-	glm::vec2 scene_max = glm::vec2(-1.f, 1.f);
+	glm::vec2 scene_min = glm::vec2(-1.f, -1.f);
+	glm::vec2 scene_max = glm::vec2(1.f, 1.f);
 
 	//compute window aspect ratio:
 	float aspect = drawable_size.x / float(drawable_size.y);
-	//we'll scale the x coordinate by 1.0 / aspect to make sure things stay square.
 
-	//compute scale factor for court given that...
+	//compute scale factor
 	float scale = std::min(
-		(2.0f * aspect) / (scene_max.x - scene_min.x), //... x must fit in [-aspect,aspect] ...
-		(2.0f) / (scene_max.y - scene_min.y) //... y must fit in [-1,1].
+		(0.05f * aspect) / (scene_max.x - scene_min.x), //... x must fit in [-aspect,aspect] ...
+		(0.05f) / (scene_max.y - scene_min.y) //... y must fit in [-1,1].
 	);
 
-	glm::vec2 center = 0.5f * (scene_max + scene_min);
 
 	//build matrix that scales and translates appropriately:
 	glm::mat4 court_to_clip = glm::mat4(
-		glm::vec4(scale / aspect, 0.0f, 0.0f, 0.0f),
-		glm::vec4(0.0f, scale, 0.0f, 0.0f),
-		glm::vec4(0.0f, 0.0f, 1.0f, 0.0f),
-		glm::vec4(-center.x * (scale / aspect), -center.y * scale, 0.0f, 1.0f)
+		glm::vec4(scale / aspect, 0.f, 0.f, 0.f),
+		glm::vec4(0.f, scale, 0.f, 0.f),
+		glm::vec4(0.f, 0.f, 1.f, 0.f),
+		glm::vec4(0.f, 0.f, 0.f, 1.f)
 	);
 	//NOTE: glm matrices are specified in *Column-Major* order,
-	// so each line above is specifying a *column* of the matrix(!)
+	//so each line above is specifying a *column* of the matrix(!)
 
 	//use alpha blending:
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//don't use the depth test:
 	glDisable(GL_DEPTH_TEST);
 

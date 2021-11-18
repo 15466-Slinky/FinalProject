@@ -88,9 +88,7 @@ struct PlayMode : Mode {
 			//we want the firework to be in an upwards position so choose a random upwards direction
 			//https://stackoverflow.com/questions/686353/random-float-number-generation
 			float y = (static_cast <float> (rand()) / static_cast <float> (RAND_MAX)) + 0.1f; //random number between 0.1f and 1.1f
-			float x = static_cast <float> (rand()) / static_cast <float> (RAND_MAX); //another random number between 0.f and 1.f
-			if (rand() % 2 + 1 == 0) //with .5 probability, make x negative
-				x *= -1;
+			float x = 2.f * static_cast <float> (rand()) / static_cast <float> (RAND_MAX) - 1.f; //another random number between 0.f and 1.f
 
 			direction = glm::normalize(glm::vec2(x, y));
 
@@ -101,7 +99,7 @@ struct PlayMode : Mode {
 		void update(float elapsed) {
 			age += elapsed;
 			//direction.y -= elapsed * GRAVITY;
-			position += elapsed * speed * direction * 0.001f;
+			position += elapsed * speed * direction;
 		}
 	};
 
@@ -192,11 +190,11 @@ struct PlayMode : Mode {
 	float camera_zoomed_out = 1.f;
 
 	//fireworks
-	size_t max_fireworks_num = 20;
+	size_t max_fireworks_num = 30;
 	float max_fireworks_age = 10.f;
-	float fireworks_time_between = 1.f;
+	float fireworks_time_between = 0.2f;
 	float fireworks_countdown = 0.f;
-	float fireworks_speed = 5.f;
+	float fireworks_speed = 15.f;
 	std::vector<firework> fireworks;
 	
 	//scene
