@@ -463,7 +463,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	
 	GL_ERRORS();
 
-	/*if (game_over)*/ { //use DrawLines to overlay some text:
+	if (game_over) { //use DrawLines to overlay some text:
 		glDisable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
 		float aspect = float(drawable_size.x) / float(drawable_size.y);
@@ -487,9 +487,9 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		};
 
 		draw_text(glm::vec2(-aspect + 0.5f, 0.0f), "GAME OVER: YOU WIN!", 0.4f);
-	}
 
-	celebrate_draw(drawable_size);
+		celebrate_draw(drawable_size);
+	}
 }
 
 std::vector<PlayMode::intersection> PlayMode::get_collisions(const PlayMode::circle &c, const std::vector<PlayMode::line_segment> &ls) {
@@ -778,7 +778,6 @@ void PlayMode::celebrate_draw(glm::uvec2 const &drawable_size) {
 		(0.05f * aspect) / (scene_max.x - scene_min.x), //... x must fit in [-aspect,aspect] ...
 		(0.05f) / (scene_max.y - scene_min.y) //... y must fit in [-1,1].
 	);
-
 
 	//build matrix that scales and translates appropriately:
 	glm::mat4 court_to_clip = glm::mat4(
