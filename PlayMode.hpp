@@ -246,5 +246,5 @@ struct PlayMode : Mode {
 		glm::u8vec4 Color;
 		glm::vec2 TexCoord;
 	};
-	static_assert(sizeof(Vertex) == 3*4+3*4+4*1+2*4, "Vertex2 is packed.");
+	static_assert(sizeof(Vertex2) == 3*4+3*4+4*1+2*4, "Vertex2 is packed.");
 };
