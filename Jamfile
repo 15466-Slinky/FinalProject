@@ -161,6 +161,8 @@ COMMON_NAMES =
 	Load
 	Connection
 	hex_dump
+	Collisions
+	DynamicCamera
 	;
 
 SHOW_MESHES_NAMES =

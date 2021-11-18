@@ -1,5 +1,6 @@
 #include "LitColorTextureProgram.hpp"
 #include "ColorTextureProgram.hpp"
+#include "load_save_png.hpp"
 
 #include "PlayMode.hpp"
 
@@ -54,7 +55,7 @@ Load< Sound::Sample > spring_boing_sample(LoadTagDefault, []() -> Sound::Sample 
 	return new Sound::Sample(data_path("140867__juskiddink__boing.opus"));
 });
 
-Load< Sound::Sample > cat_meow_sample(LoadTagDefault, []() -> Sound::Sample const * {
+Load< Sound::Sample > cat_meow_sample(LoadTagDefault, []() -> Sound::Sample const* {
 	return new Sound::Sample(data_path("110011__tuberatanka__cat-meow.opus"));
 });
 
@@ -67,6 +68,29 @@ Load< Sound::Sample > nt_effect_sample(LoadTagDefault, []() -> Sound::Sample con
 });
 
 
+/* Loads a texture as a PNG, then pushes it onto the GPU */
+GLuint PlayMode::load_texture(std::string filename) {
+	glm::uvec2 size;
+	std::vector< glm::u8vec4 > tex_data;
+
+	load_png(filename, &size, &tex_data, UpperLeftOrigin);
+
+	//make a 1-pixel white texture to bind by default:
+	GLuint tex;
+	glGenTextures(1, &tex);
+
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data.data());
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return tex;
+}
+
 //------------- Functions -----------------//
 PlayMode::PlayMode() : scene(*slinky_scene) {
 	srand(time(NULL));
@@ -74,42 +98,63 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	// get pointer to each shape
 	for (auto &drawable : scene.drawables) {
 		std::string drawable_name = drawable.transform->name;
-		
+
 		if(drawable_name == "CatHead"){
 			cat_head = drawable.transform;
 			assert(drawable.transform->position.z == 0.f);	// make sure on xy plane
-		}else if(drawable_name == "CatTail"){
+		}
+		else if(drawable_name == "CatTail"){
 			cat_tail = drawable.transform;
 			assert(drawable.transform->position.z == 0.f);
-		}else if(drawable_name == "Doughnut"){
+		}
+		else if(drawable_name == "CatBody"){
+			cat_body = &drawable;
+			assert(drawable.transform->position.z == 0.f);
+		}
+		else if(drawable_name == "Doughnut"){
 			doughnut = drawable.transform;
 			assert(drawable.transform->position.z == 0.f);
-		}else if(drawable_name.find("Platform") != std::string::npos){
+		}
+		else if(drawable_name.find("Platform") != std::string::npos &&
+				// Don't actually collide with scratching posts
+				drawable_name.find("Scratch") == std::string::npos){
 			platforms.push_back(drawable.transform);
 			assert(drawable.transform->position.z == 0.f);
-		}else if(drawable_name.find("Checkpoint") != std::string::npos){
+
+			GLuint tex = load_texture(data_path("floortex.png"));
+			drawable.pipeline.textures[0].texture = tex;
+		}
+		else if(drawable_name.find("Checkpoint") != std::string::npos){
 			checkpoints.emplace_back(drawable_name, glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
 			//checkpoints don't have to be at z-value 0.f for visual reasons
 			assert(checkpoint_find_sides(&(checkpoints.back())));
-		}else if(drawable_name.find("Fish") != std::string::npos){
+		}
+		else if(drawable_name.find("Scratch") != std::string::npos && 
+				drawable_name.find("Post") != std::string::npos) {
+			printf("%s\n", drawable_name.c_str());
+			grab_points.emplace_back(glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
+		}
+		else if(drawable_name.find("Fish") != std::string::npos){
 			fishes.push_back(drawable.transform);
 			//fish don't have to be at z-value 0.f for visual reasons
+		}
+		else if (drawable_name == "Background") {
+			GLuint tex = load_texture(data_path("bg.png"));
+			drawable.pipeline.textures[0].texture = tex;
 		}
 	}
 	
 	// check all loaded
 	if (platforms.empty()) throw std::runtime_error("Platforms not found.");
-	assert(platforms.size() == 10); // make sure platform count matched
+	assert(platforms.size() == 9); // make sure platform count matched
 	if (checkpoints.empty()) throw std::runtime_error("Checkpoints not found.");
 	assert(checkpoints.size() == 1); //make sure the checkpoint count matches
 	if(cat_head == nullptr) throw std::runtime_error("Cat head not found.");
 	if(cat_tail == nullptr) throw std::runtime_error("Cat tail not found.");
 	if(doughnut == nullptr) throw std::runtime_error("Doughnut not found.");
 
-
 	//TODO: reposition doughnut to test object interaction, need to remove later
 	//doughnut->position = cat_tail->position - glm::vec3(5.0f, 0.0f, 0.0f);
-
 
 	sort_checkpoints();
 	curr_checkpoint_id = -1; //we haven't reached any checkpoint yet
@@ -130,26 +175,13 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	head_grounded = false;
 	tail_grounded = false;
 
-	for(auto p : platforms) {
-		std::vector<PlayMode::line_segment> lines = get_lines(p);
-		assert(lines.size() == 4);
-		
-		line_segments.emplace_back(lines[0]);	// left
-		line_segments.emplace_back(lines[1]);	// right
-		line_segments.emplace_back(lines[2]);	// up
-		line_segments.emplace_back(lines[3]);	// bottom
-	}
+	collision_manager = CollisionManager(platforms);
 
-	// get pointer to camera
+	//check cameras and make the dynamic camera
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
-	scene.cameras.emplace_back(&scene.transforms.back());
-	
-	camera = &scene.cameras.front();	// used perspective camera, may not need to change fov
-	camera -> fovy = glm::radians(35.f);		// adjust fov
-	//camera -> fovy = glm::radians(60.0f);
-	//camera -> near = 0.01f;
-	camera_pos = glm::vec3(head_pos.x, head_pos.y, camera_default_z);
-	camera->transform->position = camera_pos;
+		scene.cameras.emplace_back(&scene.transforms.back());
+	camera = &scene.cameras.front();
+	dynamic_camera = DynamicCamera(camera, glm::vec3(0.f), 9.f, 50.f);
 
 	//start music loop playing:
 	bgm_loop = Sound::loop(*bgm_loop_sample, 1.0f, 0.0f);
@@ -277,15 +309,13 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			space.downs += 1;
 			space.pressed = true;
 			return true;
-		} else if (evt.key.keysym.sym == SDLK_q) {
-			if (grab_ledge(tail_pos, 1.f + grab_radius)) {
-				fixed_tail = !fixed_tail;
-			}
-			return true;
 		} else if (evt.key.keysym.sym == SDLK_e) {
-			if (grab_ledge(head_pos, 1.f + grab_radius)) {
-				fixed_head = !fixed_head;
-			}
+			//if (grab_ledge(head_pos, 1.f + grab_radius)) {
+			//	fixed_head = !fixed_head;
+			//}
+
+			fixed_head = false;
+
 			return true;
 		}
 	} else if (evt.type == SDL_KEYUP) {
@@ -315,7 +345,8 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 void PlayMode::update(float elapsed) {
 	//check if the game has ended, aka if we have eaten the donut
-	celebrate_update(elapsed);
+	if (game_over)
+    celebrate_update(elapsed);
 	if (glm::distance(head_pos, glm::vec2(doughnut->position)) < 1.f) {
 		game_over = true;
 	}
@@ -328,101 +359,15 @@ void PlayMode::update(float elapsed) {
 		cat_scream_SFX = Sound::play(*cat_scream_sample, 1.0f, 0.0f);
 	}
 
-	// interaction with in-game objects
-	for(auto& fish : fishes){
-		
-		if(sense_counter < sense_SFX_cd){
-			// SFX cool down
-			sense_counter += elapsed;
-
-		}else{
-			if(glm::abs(glm::length(cat_head->position - fish->position) - sensing_dist) < 1.0f){
-				// near fish, play nt effect
-				nt_SFX = Sound::play(*nt_effect_sample, 1.0f, 0.0f);
-				// reset counter
-				sense_counter = 0.0f;
-			}
-		}
-		
-
-		if(eat_counter < eat_SFX_cd){
-			// SFX cool down
-			eat_counter += elapsed;
-
-		}else{
-			if(glm::abs(glm::length(cat_head->position - fish->position) - eat_dist) < 1.0f){
-				// near fish, play nt effect
-				cat_meow_SFX = Sound::play(*cat_meow_sample, 1.0f, 0.0f);
-				// reset counter
-				eat_counter = 0.0f;
-			}
-		}
-
-	}
-
-	
-
-	
-
-
-	// Apply gravity
-	head_vel.y -= elapsed * GRAVITY;
-	tail_vel.y -= elapsed * GRAVITY;
-	
-	playerlength = space.pressed ? 20.f : 1.f;
-	if (space.pressed) {
-		stretched = true;
-	}
-	else if (stretched && glm::distance(head_pos, tail_pos) <= 4.f) {
-		stretched = false;
-
-		fixed_head = false;
-		head_grounded = false;
-		head_vel += tail_vel * 0.5f;
-		tail_vel *= 0.5f;
-
-		printf("Recompressed %f\n", head_vel.x);
-	}
-
-
-	if (!fixed_head && !fixed_tail) {
-		free_movement(elapsed);
-	} else if (fixed_head && fixed_tail) {
-		head_vel.x = 0.f;
-		head_vel.y = 0.f;
-		tail_vel.x = 0.f;
-		tail_vel.y = 0.f;
-		std::cout << "you have stuck both your head and tail and cannot move\n";
-	} else if (fixed_head) {
-		fixed_head_movement(elapsed);
-	} else if (fixed_tail) {
-		fixed_tail_movement(elapsed);
-	}
-
-	// Do phyics update
-	head_pos += head_vel * elapsed;
-	tail_pos += tail_vel * elapsed;
-
-	//update camera
-	update_camera(elapsed);
+	//interact with objects
+	interact_objects(elapsed);
 
 	//update checkpoint
 	update_checkpoints();
 	if (activating_checkpoint) activate_checkpoint(curr_checkpoint_id, elapsed);
 
-	//spin fish
-	spin_fish(elapsed);
-
-	// Check collision with the walls and adjust the velocities accordingly
-	collide_segments(head_pos, head_vel, 1.f, head_grounded);
-	collide_segments(tail_pos, tail_vel, 1.f, tail_grounded);
-
-	// Air resistance, or surface friction if the segment is sitting on the floor
-	//head_vel *= head_grounded ? .9f : .99f;
-	//tail_vel *= tail_grounded ? .9f : .99f; 
-	// Air resistance only
-	head_vel *= 0.99f;
-	tail_vel *= 0.99f; 
+	player_phys_update(elapsed);
+	animation_update(elapsed);
 
 	//reset button press counters:
 	left.downs = 0;
@@ -432,6 +377,21 @@ void PlayMode::update(float elapsed) {
 	space.downs = 0;
 }
 
+/* Checks to see if the player has approached any grab points, and automatically grabs 
+   onto that point if they have */
+void PlayMode::do_auto_grab() {
+	for(Grab_Point &p : grab_points) {
+		float dist = glm::distance(p.position, head_pos);
+
+		// Only perform a grab upon entry into the grab radius
+		if(dist <= GRAB_RADIUS && p.past_player_dist > GRAB_RADIUS) {
+			fixed_head = true;
+		}
+
+		p.past_player_dist = dist;
+	}
+}
+
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	cat_head->position.x = head_pos.x;
 	cat_head->position.y = head_pos.y;
@@ -439,9 +399,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	cat_tail->position.x = tail_pos.x;
 	cat_tail->position.y = tail_pos.y;
 	
-	//draw scene and update camera
-	camera->transform->position = camera_pos;
-	camera->aspect = float(drawable_size.x) / float(drawable_size.y);
+	dynamic_camera.draw(drawable_size);
 
 	//set up light type and position for lit_color_texture_program:
 	// TODO: consider using the Light(s) in the scene to do this
@@ -492,167 +450,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	}
 }
 
-std::vector<PlayMode::intersection> PlayMode::get_collisions(const PlayMode::circle &c, const std::vector<PlayMode::line_segment> &ls) {
-	//https://stackoverflow.com/questions/1073336/circle-line-segment-collision-detection-algorithm
-	std::vector<PlayMode::intersection> collision_data;
-
-	for (PlayMode::line_segment l : ls) { //iterate through each line segment
-		glm::vec2 start = l.ep1;
-		glm::vec2 end = l.ep2;
-		glm::vec2 circle_center = c.center;
-		float radius = c.radius;
-
-		glm::vec2 d = end - start;
-		glm::vec2 f = start - circle_center;
-
-		float a = glm::dot(d, d);
-		float b = 2.f * glm::dot(f, d);
-		float c = glm::dot(f, f) - radius * radius;
-
-		float discriminant = b * b - 4.f * a * c;
-		if (discriminant >= 0.f) { //we hit the circle in some way
-			discriminant = std::sqrt(discriminant);
-
-			assert(a != 0.f);
-			float t1 = (-b - discriminant) / (2.f * a);
-			float t2 = (-b + discriminant) / (2.f * a);
-
-			if (t1 == t2) { //segment intersects tangent to circle
-				glm::vec2 point_of_intersection = start + t1 * d;
-				collision_data.emplace_back(point_of_intersection, l.surface_normal);
-			}
-			else if (t1 >= 0.f && t1 <= 1.f && t2 >= 0.f && t2 <= 1.f) { //segment impales the circle
-				glm::vec2 point_of_intersection_1 = start + t1 * d;
-				glm::vec2 point_of_intersection_2 = start + t2 * d;
-				glm::vec2 midpoint = (point_of_intersection_1 + point_of_intersection_2) / 2.0f;
-				collision_data.emplace_back(midpoint, l.surface_normal);
-			}
-			else if (t1 >= 0.f && t1 <= 1.f) { //segment starts outside the circle and ends inside (poke)
-				glm::vec2 point_of_intersection = start + t1 * d;
-				collision_data.emplace_back(point_of_intersection, l.surface_normal);
-			}
-			else if (t2 >= 0.f && t2 <= 1.f) { //segment starts inside the circle and exits (exit wound)
-				glm::vec2 point_of_intersection = start + t2 * d;
-				collision_data.emplace_back(point_of_intersection, l.surface_normal);
-			}
-			/*
-			else { no intersection! }
-			*/
-		}
-	}
-
-	return collision_data;
-}
-
-PlayMode::intersection PlayMode::get_capsule_collision(const PlayMode::circle &c, const PlayMode::line_segment &l, bool &is_hit) {
-	glm::vec2 point = c.center;
-	float radius = c.radius;
-	glm::vec2 start = l.ep1;
-	glm::vec2 end = l.ep2;
-	is_hit = true;
-
-	//test the line segment first
-	//project point onto line segment: https://stackoverflow.com/questions/10301001/perpendicular-on-a-line-segment-from-a-given-point
-	float t = ((point.x - start.x) * (end.x - start.x) + (point.y - start.y) * (end.y - start.y)) / (powf(end.x - start.x, 2) + powf(end.y - start.y, 2));
-	if (t >= 0.f && t <= 1.f) {
-		glm::vec2 projection = start + t * (end - start);
-		float distance = glm::distance(point, projection);
-
-		if (distance <= radius) {
-			glm::vec2 closest_exterior_point = projection + radius * l.surface_normal;
-			return PlayMode::intersection(closest_exterior_point, l.surface_normal);
-		}
-	}
-
-	//test the endpoints of the line segment
-	if (glm::distance(point, start) <= radius) {
-		assert(point != start);
-		glm::vec2 surface_normal = glm::normalize(point - start);
-		glm::vec2 closest_exterior_point = start + radius * surface_normal;
-		return PlayMode::intersection(closest_exterior_point, surface_normal);
-	}
-	if (glm::distance(point, end) <= radius) {
-		assert(point != end);
-		glm::vec2 surface_normal = glm::normalize(point - end);
-		glm::vec2 closest_exterior_point = end + radius * surface_normal;
-		return PlayMode::intersection(closest_exterior_point, surface_normal);
-	}
-
-	is_hit = false;
-	return PlayMode::intersection(glm::vec2(0.f), glm::vec2(0.f)); //point isn't within the capsule
-}
-
-// TODO: load all surface line segment, use local_to_world to handle rotated platform
-std::vector<PlayMode::line_segment> PlayMode::get_lines(const Scene::Transform* platform){
-	// z component is always 0
-	// +y is up, +x is right
-	
-	glm::vec3 position = platform->position;
-	glm::quat rotation = platform->rotation;
-	glm::mat3 rotation_matrix = glm::mat3_cast(rotation);
-	glm::vec3 scale = platform->scale;
-	//glm::mat4x3 to_world = platform->make_local_to_world();
-	
-	// left line
-	glm::vec3 l_min = rotation * glm::vec3(-scale.x, scale.y, 0.f) + position;
-	glm::vec3 l_max = rotation * glm::vec3(-scale.x, -scale.y, 0.f) + position;
-	glm::vec3 l_norm = rotation_matrix * glm::vec3(-1.f, 0.f, 0.f);
-	// right line
-	glm::vec3 r_min = rotation * glm::vec3(scale.x, scale.y, 0.f) + position;
-	glm::vec3 r_max = rotation * glm::vec3(scale.x, -scale.y, 0.f) + position;
-	glm::vec3 r_norm = rotation_matrix * glm::vec3(1.f, 0.f, 0.f);
-	// upper line
-	glm::vec3 u_min = rotation * glm::vec3(-scale.x, scale.y, 0.f) + position;
-	glm::vec3 u_max = rotation * glm::vec3(scale.x, scale.y, 0.f) + position;
-	glm::vec3 u_norm = rotation_matrix * glm::vec3(0.f, 1.f, 0.f);
-	// bottom line
-	glm::vec3 d_min = rotation * glm::vec3(-scale.x, -scale.y, 0.f) + position;
-	glm::vec3 d_max = rotation * glm::vec3(scale.x, -scale.y, 0.f) + position;
-	glm::vec3 d_norm = rotation_matrix * glm::vec3(0.f, -1.f, 0.f);
-
-	/*
-	// left line
-	glm::vec3 l_min = to_world * glm::vec4(-scale.x, scale.y, 0.0f, 1.0f);
-	glm::vec3 l_max = to_world * glm::vec4(-scale.x, -scale.y, 0.0f, 1.0f);
-	// right line
-	glm::vec3 r_min = to_world * glm::vec4(scale.x, scale.y, 0.0f, 1.0f);
-	glm::vec3 r_max = to_world * glm::vec4(scale.x, -scale.y, 0.0f, 1.0f);
-	// upper line
-	glm::vec3 u_min = to_world * glm::vec4(-scale.x, scale.y, 0.0f, 1.0f);
-	glm::vec3 u_max = to_world * glm::vec4(scale.x, scale.y, 0.0f, 1.0f);
-	// bottom line
-	glm::vec3 d_min = to_world * glm::vec4(-scale.x, -scale.y, 0.0f, 1.0f);
-	glm::vec3 d_max = to_world * glm::vec4(scale.x, -scale.y, 0.0f, 1.0f);
-	*/
-
-	std::vector<PlayMode::line_segment> lines = {
-		line_segment(l_min, l_max, l_norm),
-		line_segment(r_min, r_max, r_norm),
-		line_segment(u_min, u_max, u_norm),
-		line_segment(d_min, d_max, d_norm)
-	};
-	
-	return lines;
-}
-
-void PlayMode::update_camera(float elapsed) { //numbers in this function can be changed later for fine-tuning
-	glm::vec2 camera_pos_2d = glm::vec2(camera_pos.x, camera_pos.y);
-	glm::vec2 camera_dir_2d = ((head_pos + tail_pos) / 2.f) - camera_pos_2d;
-
-	camera_pos.x += camera_dir_2d.x * elapsed * CAMERA_SPEED;
-	camera_pos.y += camera_dir_2d.y * elapsed * CAMERA_SPEED;
-	
-	if (space.pressed) { //zoom out if player is stretched far enough
-		float zoom_out_ratio = std::max(1.f, glm::distance(head_pos, tail_pos) / playerlength);
-		camera_zoomed_out = zoom_out_ratio;
-		camera_pos.z = camera_default_z * camera_zoomed_out;
-	}
-	else if (camera_pos.z > camera_default_z){ //zoom back in over time
-		camera_zoomed_out = std::max(1.f, camera_zoomed_out - elapsed * CAMERA_SPEED / 5.f);
-		camera_pos.z = camera_default_z * camera_zoomed_out;
-	}
-}
-
 void PlayMode::sort_checkpoints() {
 	//sort checkpoints based on x position
 	std::sort(checkpoints.begin(), checkpoints.end());
@@ -662,7 +459,8 @@ void PlayMode::update_checkpoints() {
 	if (curr_checkpoint_id == checkpoints.size() - 1) { //we already passed the last checkpoint! is it game over?
 		return; //we can revisit this later if we want the last checkpoint to end the game
 	}
-	if (head_pos.x >= next_checkpoint.position.x || tail_pos.x >= next_checkpoint.position.x) { //if we are past the next checkpoint, then make it the new current checkpoint
+	//if we are past the next checkpoint, then make it the new current checkpoint
+	if (glm::distance(head_pos, next_checkpoint.position) <= 3.f || glm::distance(tail_pos, next_checkpoint.position) <= 3.f) {
 		curr_checkpoint_id += 1;
 		curr_checkpoint = checkpoints[curr_checkpoint_id];
 		curr_checkpoint.reached = true;
@@ -827,14 +625,67 @@ void PlayMode::celebrate_draw(glm::uvec2 const &drawable_size) {
 	GL_ERRORS(); //PARANOIA: print errors just in case we did something wrong.
 }
 
+void PlayMode::turn_cat() {
+	/*
+	if (!fixed_head) {
+		if (head_vel.x > 0.f && direction) { //using direction to avoid unnecessary writes to rotation
+			cat_head->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+			direction = 0;
+		}
+		else if (head_vel.x < 0.f && !direction) {
+			cat_head->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
+			direction = 1;
+		}
+	}
+	if (tail_vel.x > 0.f && tail_direction) {
+		cat_tail->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+		tail_direction = 0;
+	}
+	else if (tail_vel.x < 0.f && !tail_direction) {
+		cat_tail->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
+		tail_direction = 1;
+	}
+	*/
+
+	glm::vec3 disp = cat_head->position - cat_tail->position;
+	glm::vec3 up(0.f, 1.f, 0.f);
+
+	cat_head->rotation = glm::quatLookAt(glm::normalize(disp), up) * glm::quat(up * (3.14159f / 2));
+	cat_tail->rotation = glm::quatLookAt(glm::normalize(disp), up) * glm::quat(up * (3.14159f / 2));
+}
+
+/* Dynamic player meshing (WIP) */
+void PlayMode::update_body() {
+	cat_body->transform->position = (cat_tail->position);
+
+	//vertices will be accumulated into this list and then uploaded+drawn at the end of this function:
+	//std::vector< Vertex > vertices;
+			
+	//glm::u8vec4 color(255, 255, 255, 255);
+
+	//vertices.emplace_back(glm::vec3(0.f, 0.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	//vertices.emplace_back(glm::vec3(0.f, 1.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	//vertices.emplace_back(glm::vec3(1.f, 0.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+
+	
+	//upload vertices to vertex_buffer:
+	glBindBuffer(GL_ARRAY_BUFFER, cat_body->pipeline.vao); //set vertex_buffer as current
+	////upload vertices array
+	//glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices[0]), vertices.data(), GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//cat_body->pipeline.count = 3;
+	cat_body->pipeline.count = 0;
+}
+
 void PlayMode::collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded) {
 	grounded = false;
 
-	for(line_segment &ls : line_segments) {
-		circle c(pos, radius);
+	for(CollisionManager::line_segment &ls : collision_manager.line_segments) {
+		CollisionManager::circle c(pos, radius);
 
 		bool is_hit = false;
-		intersection hit = get_capsule_collision(c, ls, is_hit);
+		CollisionManager::intersection hit = collision_manager.get_capsule_collision(c, ls, is_hit);
 
 		if(is_hit) {
 			pos = hit.point_of_intersection;
@@ -854,9 +705,139 @@ void PlayMode::collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bo
 }
 
 bool PlayMode::grab_ledge(glm::vec2& pos, float radius) {
-	circle c(pos, radius);
-	std::vector<intersection> hits = get_collisions(c, line_segments);
+	CollisionManager::circle c(pos, radius);
+	std::vector<CollisionManager::intersection> hits = collision_manager.get_collisions_all(c);
 	return (!hits.empty());
+}
+
+void PlayMode::interact_objects(float elapsed) {
+	// interaction with in-game objects
+	for (uint8_t i = 0; i < fishes.size(); ++i) {
+		Scene::Transform* fish = fishes[i];
+
+		if (sense_counter < sense_SFX_cd) {
+			// SFX cool down
+			sense_counter += elapsed;
+
+		}
+		else {
+			if (glm::abs(glm::length(cat_head->position - fish->position) - sensing_dist) < 1.0f) {
+				// near fish, play nt effect
+				// Don't play the sense sound effect, it's confusing
+				//nt_SFX = Sound::play(*nt_effect_sample, 1.0f, 0.0f);
+
+				// reset counter
+				sense_counter = 0.0f;
+			}
+		}
+
+
+		if (eat_counter < eat_SFX_cd) {
+			// SFX cool down
+			eat_counter += elapsed;
+
+		}
+		else {
+			if (glm::abs(glm::length(cat_head->position - fish->position) - eat_dist) < 1.0f ||
+				glm::abs(glm::length(cat_tail->position - fish->position) - eat_dist) < 1.0f) {
+				// near fish, play nt effect
+				cat_meow_SFX = Sound::play(*cat_meow_sample, 1.0f, 0.0f);
+
+				// "delete" fish
+				fish->scale = glm::vec3(0.0f, 0.0f, 0.0f);
+				fishes.erase(fishes.begin() + i);
+				i--;
+
+				// increase player length
+				maxlength += 10.f;
+				player_body.push_back(Spring_Point(head_pos, glm::vec2(0.f, 0.f)));
+				size_t num_springs = player_body.size();
+				glm::vec2 disp = (head_pos - tail_pos) / (float)num_springs;
+				for (uint8_t j = 0; j < num_springs; ++j) {
+					Spring_Point p = player_body[j];
+					p.pos = tail_pos + glm::vec2(disp.x * j, disp.y * j); //distribute evenly
+					p.vel = glm::vec2(0.f, 0.f); //reset velocity to avoid potential issues
+				}
+
+				// reset counter
+				eat_counter = 0.0f;
+			}
+		}
+
+	}
+}
+
+void PlayMode::animation_update(float elapsed) {
+	//spin fish
+	spin_fish(elapsed);
+
+	//reorient cat
+	turn_cat();
+	update_body();
+
+	//update camera
+	dynamic_camera.update(elapsed, (head_pos + tail_pos) / 2.f, space.pressed, glm::distance(head_pos, tail_pos) / playerlength);
+}
+
+void PlayMode::player_phys_update(float elapsed) {
+	// Apply gravity
+	head_vel.y -= elapsed * GRAVITY;
+	tail_vel.y -= elapsed * GRAVITY;
+	for (auto body : player_body) {
+		body.vel -= elapsed * GRAVITY;
+	}
+	
+	playerlength = space.pressed ? maxlength : 1.f;
+
+	float head_tail_dist = glm::distance(head_pos, tail_pos);
+
+	if (space.pressed) {
+		if(head_tail_dist > 4.f)
+			stretched = true;
+	}
+	// If not pressing stretch, grabbing onto something, and the player has just recompressed, 
+	// let go and apply the velocity to both halves
+	else if (fixed_head && stretched && head_tail_dist <= 4.f) {
+		stretched = false;
+
+		fixed_head = false;
+		head_grounded = false;
+		head_vel += tail_vel *0.5f;
+		tail_vel *= 0.5f;
+
+		printf("Recompressed %f\n", head_vel.x);
+	}
+
+	do_auto_grab();
+
+
+	if (!fixed_head && !fixed_tail) {
+		free_movement(elapsed);
+	} else if (fixed_head && fixed_tail) {
+		head_vel.x = 0.f;
+		head_vel.y = 0.f;
+		tail_vel.x = 0.f;
+		tail_vel.y = 0.f;
+		std::cout << "you have stuck both your head and tail and cannot move\n";
+	} else if (fixed_head) {
+		fixed_head_movement(elapsed);
+	}
+
+	// Do phyics update
+	head_pos += head_vel * elapsed;
+	tail_pos += tail_vel * elapsed;
+
+	// Check collision with the walls and adjust the velocities accordingly
+	collide_segments(head_pos, head_vel, 1.f, head_grounded);
+	collide_segments(tail_pos, tail_vel, 1.f, tail_grounded);
+
+	// Air resistance only FIXED UPDATE
+	timer += elapsed;
+	while (timer > fixed_time) {
+		head_vel *= 0.995f;
+		tail_vel *= 0.995f;
+		timer -= fixed_time;
+	}
 }
 
 void PlayMode::free_movement(float elapsed) {
@@ -895,8 +876,7 @@ void PlayMode::fixed_head_movement(float elapsed) {
 		tail_vel.x = 0.f;
 		tail_vel.y = 0.f;
 	}
-	//tail_vel.x = 0;
-	//tail_vel.y = 0;
+
 	if (left.pressed) tail_vel.x = -PLAYER_SPEED;
 	else if (right.pressed) tail_vel.x = PLAYER_SPEED;
 	if (up.pressed && tail_grounded) tail_vel.y = JUMP_SPEED;
