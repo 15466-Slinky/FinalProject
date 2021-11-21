@@ -61,6 +61,33 @@ bool Player::grab_ledge(const CollisionManager &cm, glm::vec2& pos, float radius
 	return (!hits.empty());
 }
 
+void Player::free_movement(float elapsed, bool left, bool right, bool up) {
+	// If the head is grounded, just stay still
+	if(head_grounded) {
+		head_vel.x = 0.f;
+		head_vel.y = 0.f;
+	}
+
+	if (left) head_vel.x = -speed;
+	else if (right) head_vel.x = speed;
+	if (up && head_grounded) 
+	{	
+		head_vel.y = jump_speed;
+		tail_vel.y += jump_speed / 2.f;
+	}
+
+	glm::vec2 disp = (head_pos - tail_pos);
+	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - length);
+	if (disp != glm::vec2(0.f)) {
+		glm::vec2 spring_force = glm::normalize(disp) * dist * k;
+		tail_vel += spring_force * elapsed;
+	}
+	
+	// Only pull on the head if it's not standing somewhere
+	//if(!head_grounded)
+	//	head_vel -= spring_force * elapsed;
+}
+
 void Player::respawn() {
 	head_pos = head_respawn_pos;
 	head_vel = glm::vec2(0.f);

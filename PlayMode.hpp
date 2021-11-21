@@ -116,7 +116,6 @@ struct PlayMode : Mode {
 
 	//----- movement updates -----
 	void do_auto_grab();
-	void free_movement(float elapsed);
 	void fixed_head_movement(float elapsed);
 	void fixed_tail_movement(float elapsed);
 	void turn_cat();
@@ -161,11 +160,6 @@ struct PlayMode : Mode {
 
 	// Indicates if the player has extended the player size, and the player hasn't yet compressed back to actual size
 	bool stretched = false;
-
-	float playerlength = 5.f; //length of spring
-	float maxlength = 10.f; //maximum length
-	float k = 20.f; //spring constant
-	float grab_radius = 0.5f; //grabbable radius
 
 	float eat_dist = 3.0f;		// distance range that consider hit object
 	float sensing_dist = 20.0f;	// sensing distance, should be further than eat_dist

@@ -704,7 +704,8 @@ void PlayMode::interact_objects(float elapsed) {
 				i--;
 
 				// increase player length
-				maxlength += 10.f;
+				player.max_length
+		 += 10.f;
 				player_body.push_back(Spring_Point(player.head_pos, glm::vec2(0.f, 0.f)));
 				size_t num_springs = player_body.size();
 				glm::vec2 disp = (player.head_pos - player.tail_pos) / (float)num_springs;
@@ -731,7 +732,7 @@ void PlayMode::animation_update(float elapsed) {
 	update_body();
 
 	//update camera
-	dynamic_camera.update(elapsed, (player.head_pos + player.tail_pos) / 2.f, space.pressed, glm::distance(player.head_pos, player.tail_pos) / playerlength);
+	dynamic_camera.update(elapsed, (player.head_pos + player.tail_pos) / 2.f, space.pressed, glm::distance(player.head_pos, player.tail_pos) / player.length);
 }
 
 void PlayMode::player_phys_update(float elapsed) {
@@ -742,7 +743,7 @@ void PlayMode::player_phys_update(float elapsed) {
 		body.vel -= elapsed * GRAVITY;
 	}
 	
-	playerlength = space.pressed ? maxlength : 1.f;
+	player.length = space.pressed ? player.max_length : 1.f;
 
 	float head_tail_dist = glm::distance(player.head_pos, player.tail_pos);
 
@@ -765,9 +766,8 @@ void PlayMode::player_phys_update(float elapsed) {
 
 	do_auto_grab();
 
-
 	if (!fixed_head && !fixed_tail) {
-		free_movement(elapsed);
+		player.free_movement(elapsed, left.pressed, right.pressed, up.pressed);
 	} else if (fixed_head && fixed_tail) {
 		player.head_vel.x = 0.f;
 		player.head_vel.y = 0.f;
@@ -795,33 +795,6 @@ void PlayMode::player_phys_update(float elapsed) {
 	}
 }
 
-void PlayMode::free_movement(float elapsed) {
-	// If the head is grounded, just stay still
-	if(player.head_grounded) {
-		player.head_vel.x = 0.f;
-		player.head_vel.y = 0.f;
-	}
-
-	if (left.pressed) player.head_vel.x = -player.speed;
-	else if (right.pressed) player.head_vel.x = player.speed;
-	if (up.pressed && player.head_grounded) 
-	{	
-		player.head_vel.y = player.jump_speed;
-		player.tail_vel.y += player.jump_speed / 2.f;
-	}
-
-	glm::vec2 disp = (player.head_pos - player.tail_pos);
-	float dist = std::max(0.f, glm::distance(player.head_pos, player.tail_pos) - playerlength);
-	if (disp != glm::vec2(0.f)) {
-		glm::vec2 spring_force = glm::normalize(disp) * dist * k;
-		player.tail_vel += spring_force * elapsed;
-	}
-	
-	// Only pull on the head if it's not standing somewhere
-	//if(!player.head_grounded)
-	//	player.head_vel -= spring_force * elapsed;
-}
-
 void PlayMode::fixed_head_movement(float elapsed) {
 	player.head_vel.x = 0.f;
 	player.head_vel.y = 0.f;
@@ -837,9 +810,9 @@ void PlayMode::fixed_head_movement(float elapsed) {
 	if (up.pressed && player.tail_grounded) player.tail_vel.y = player.jump_speed;
 
 	glm::vec2 disp = (player.head_pos - player.tail_pos);
-	float dist = std::max(0.f, glm::distance(player.head_pos, player.tail_pos) - playerlength);
+	float dist = std::max(0.f, glm::distance(player.head_pos, player.tail_pos) - player.length);
 	if (disp != glm::vec2(0.f)) {
-		glm::vec2 spring_force = glm::normalize(disp) * dist * k;
+		glm::vec2 spring_force = glm::normalize(disp) * dist * player.k;
 		player.tail_vel += spring_force * elapsed;
 	}
 }
@@ -854,9 +827,9 @@ void PlayMode::fixed_tail_movement(float elapsed) {
 	if (up.pressed && player.head_grounded) player.head_vel.y = player.jump_speed;
 
 	glm::vec2 disp = (player.head_pos - player.tail_pos);
-	float dist = std::max(0.f, glm::distance(player.head_pos, player.tail_pos) - playerlength);
+	float dist = std::max(0.f, glm::distance(player.head_pos, player.tail_pos) - player.length);
 	if (disp != glm::vec2(0.f)) {
-		glm::vec2 spring_force = glm::normalize(disp) * dist * k;
+		glm::vec2 spring_force = glm::normalize(disp) * dist * player.k;
 		player.head_vel -= spring_force * elapsed;
 	}
 }
