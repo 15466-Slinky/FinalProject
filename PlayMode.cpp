@@ -159,21 +159,14 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	sort_checkpoints();
 	curr_checkpoint_id = -1; //we haven't reached any checkpoint yet
 	next_checkpoint = checkpoints[0];
-	
-	head_pos.x = cat_head->position.x;
-	head_pos.y = cat_head->position.y;
 
-	head_start = head_pos;
-	tail_start = tail_pos;
-	
-	tail_pos.x = cat_tail->position.x;
-	tail_pos.y = cat_tail->position.y;
+	player = Player(glm::vec2(cat_head->position), glm::vec2(cat_tail->position));
 
-	head_vel = glm::vec2(0.f, 0.f);
-	tail_vel = glm::vec2(0.f, 0.f);
+	head_start = player.head_pos;
+	tail_start = player.tail_pos;
 
-	head_grounded = false;
-	tail_grounded = false;
+	player.head_vel = glm::vec2(0.f, 0.f);
+	player.tail_vel = glm::vec2(0.f, 0.f);
 
 	collision_manager = CollisionManager(platforms);
 
@@ -182,8 +175,6 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 		scene.cameras.emplace_back(&scene.transforms.back());
 	camera = &scene.cameras.front();
 	dynamic_camera = DynamicCamera(camera, glm::vec3(0.f), 9.f, 50.f);
-
-	player = Player();
 
 	//start music loop playing:
 	bgm_loop = Sound::loop(*bgm_loop_sample, 1.0f, 0.0f);
@@ -312,7 +303,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			space.pressed = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_e) {
-			//if (grab_ledge(head_pos, 1.f + grab_radius)) {
+			//if (grab_ledge(player.head_pos, 1.f + grab_radius)) {
 			//	fixed_head = !fixed_head;
 			//}
 
@@ -349,12 +340,12 @@ void PlayMode::update(float elapsed) {
 	//check if the game has ended, aka if we have eaten the donut
 	if (game_over)
     celebrate_update(elapsed);
-	if (glm::distance(head_pos, glm::vec2(doughnut->position)) < 1.f) {
+	if (glm::distance(player.head_pos, glm::vec2(doughnut->position)) < 1.f) {
 		game_over = true;
 	}
 
 	//respawn if player fell to their death
-	if (head_pos.y < DEATH_BOUND && tail_pos.y < DEATH_BOUND){
+	if (player.head_pos.y < DEATH_BOUND && player.tail_pos.y < DEATH_BOUND){
 		respawn();
 
 		//play cat scream
@@ -383,7 +374,7 @@ void PlayMode::update(float elapsed) {
    onto that point if they have */
 void PlayMode::do_auto_grab() {
 	for(Grab_Point &p : grab_points) {
-		float dist = glm::distance(p.position, head_pos);
+		float dist = glm::distance(p.position, player.head_pos);
 
 		// Only perform a grab upon entry into the grab radius
 		if(dist <= player.grab_radius && p.past_player_dist > player.grab_radius) {
@@ -395,11 +386,11 @@ void PlayMode::do_auto_grab() {
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
-	cat_head->position.x = head_pos.x;
-	cat_head->position.y = head_pos.y;
+	cat_head->position.x = player.head_pos.x;
+	cat_head->position.y = player.head_pos.y;
 
-	cat_tail->position.x = tail_pos.x;
-	cat_tail->position.y = tail_pos.y;
+	cat_tail->position.x = player.tail_pos.x;
+	cat_tail->position.y = player.tail_pos.y;
 	
 	dynamic_camera.draw(drawable_size);
 
@@ -462,7 +453,7 @@ void PlayMode::update_checkpoints() {
 		return; //we can revisit this later if we want the last checkpoint to end the game
 	}
 	//if we are past the next checkpoint, then make it the new current checkpoint
-	if (glm::distance(head_pos, next_checkpoint.position) <= 3.f || glm::distance(tail_pos, next_checkpoint.position) <= 3.f) {
+	if (glm::distance(player.head_pos, next_checkpoint.position) <= 3.f || glm::distance(player.tail_pos, next_checkpoint.position) <= 3.f) {
 		curr_checkpoint_id += 1;
 		curr_checkpoint = checkpoints[curr_checkpoint_id];
 		curr_checkpoint.reached = true;
@@ -630,20 +621,20 @@ void PlayMode::celebrate_draw(glm::uvec2 const &drawable_size) {
 void PlayMode::turn_cat() {
 	/*
 	if (!fixed_head) {
-		if (head_vel.x > 0.f && direction) { //using direction to avoid unnecessary writes to rotation
+		if (player.head_vel.x > 0.f && direction) { //using direction to avoid unnecessary writes to rotation
 			cat_head->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 			direction = 0;
 		}
-		else if (head_vel.x < 0.f && !direction) {
+		else if (player.head_vel.x < 0.f && !direction) {
 			cat_head->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
 			direction = 1;
 		}
 	}
-	if (tail_vel.x > 0.f && tail_direction) {
+	if (player.tail_vel.x > 0.f && tail_direction) {
 		cat_tail->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 		tail_direction = 0;
 	}
-	else if (tail_vel.x < 0.f && !tail_direction) {
+	else if (player.tail_vel.x < 0.f && !tail_direction) {
 		cat_tail->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
 		tail_direction = 1;
 	}
@@ -726,12 +717,12 @@ void PlayMode::interact_objects(float elapsed) {
 
 				// increase player length
 				maxlength += 10.f;
-				player_body.push_back(Spring_Point(head_pos, glm::vec2(0.f, 0.f)));
+				player_body.push_back(Spring_Point(player.head_pos, glm::vec2(0.f, 0.f)));
 				size_t num_springs = player_body.size();
-				glm::vec2 disp = (head_pos - tail_pos) / (float)num_springs;
+				glm::vec2 disp = (player.head_pos - player.tail_pos) / (float)num_springs;
 				for (uint8_t j = 0; j < num_springs; ++j) {
 					Spring_Point p = player_body[j];
-					p.pos = tail_pos + glm::vec2(disp.x * j, disp.y * j); //distribute evenly
+					p.pos = player.tail_pos + glm::vec2(disp.x * j, disp.y * j); //distribute evenly
 					p.vel = glm::vec2(0.f, 0.f); //reset velocity to avoid potential issues
 				}
 
@@ -752,20 +743,20 @@ void PlayMode::animation_update(float elapsed) {
 	update_body();
 
 	//update camera
-	dynamic_camera.update(elapsed, (head_pos + tail_pos) / 2.f, space.pressed, glm::distance(head_pos, tail_pos) / playerlength);
+	dynamic_camera.update(elapsed, (player.head_pos + player.tail_pos) / 2.f, space.pressed, glm::distance(player.head_pos, player.tail_pos) / playerlength);
 }
 
 void PlayMode::player_phys_update(float elapsed) {
 	// Apply gravity
-	head_vel.y -= elapsed * GRAVITY;
-	tail_vel.y -= elapsed * GRAVITY;
+	player.head_vel.y -= elapsed * GRAVITY;
+	player.tail_vel.y -= elapsed * GRAVITY;
 	for (auto body : player_body) {
 		body.vel -= elapsed * GRAVITY;
 	}
 	
 	playerlength = space.pressed ? maxlength : 1.f;
 
-	float head_tail_dist = glm::distance(head_pos, tail_pos);
+	float head_tail_dist = glm::distance(player.head_pos, player.tail_pos);
 
 	if (space.pressed) {
 		if(head_tail_dist > 4.f)
@@ -777,11 +768,11 @@ void PlayMode::player_phys_update(float elapsed) {
 		stretched = false;
 
 		fixed_head = false;
-		head_grounded = false;
-		head_vel += tail_vel *0.5f;
-		tail_vel *= 0.5f;
+		player.head_grounded = false;
+		player.head_vel += player.tail_vel *0.5f;
+		player.tail_vel *= 0.5f;
 
-		printf("Recompressed %f\n", head_vel.x);
+		printf("Recompressed %f\n", player.head_vel.x);
 	}
 
 	do_auto_grab();
@@ -790,102 +781,102 @@ void PlayMode::player_phys_update(float elapsed) {
 	if (!fixed_head && !fixed_tail) {
 		free_movement(elapsed);
 	} else if (fixed_head && fixed_tail) {
-		head_vel.x = 0.f;
-		head_vel.y = 0.f;
-		tail_vel.x = 0.f;
-		tail_vel.y = 0.f;
+		player.head_vel.x = 0.f;
+		player.head_vel.y = 0.f;
+		player.tail_vel.x = 0.f;
+		player.tail_vel.y = 0.f;
 		std::cout << "you have stuck both your head and tail and cannot move\n";
 	} else if (fixed_head) {
 		fixed_head_movement(elapsed);
 	}
 
 	// Do phyics update
-	head_pos += head_vel * elapsed;
-	tail_pos += tail_vel * elapsed;
+	player.head_pos += player.head_vel * elapsed;
+	player.tail_pos += player.tail_vel * elapsed;
 
 	// Check collision with the walls and adjust the velocities accordingly
-	player.collide_segments(collision_manager, head_pos, head_vel, 1.f, head_grounded);
-	player.collide_segments(collision_manager, tail_pos, tail_vel, 1.f, tail_grounded);
+	player.collide_segments(collision_manager, 1.f, true);
+	player.collide_segments(collision_manager, 1.f, false);
 
 	// Air resistance only FIXED UPDATE
 	timer += elapsed;
 	while (timer > fixed_time) {
-		head_vel *= 0.995f;
-		tail_vel *= 0.995f;
+		player.head_vel *= 0.995f;
+		player.tail_vel *= 0.995f;
 		timer -= fixed_time;
 	}
 }
 
 void PlayMode::free_movement(float elapsed) {
 	// If the head is grounded, just stay still
-	if(head_grounded) {
-		head_vel.x = 0.f;
-		head_vel.y = 0.f;
+	if(player.head_grounded) {
+		player.head_vel.x = 0.f;
+		player.head_vel.y = 0.f;
 	}
 
-	if (left.pressed) head_vel.x = -player.speed;
-	else if (right.pressed) head_vel.x = player.speed;
-	if (up.pressed && head_grounded) 
+	if (left.pressed) player.head_vel.x = -player.speed;
+	else if (right.pressed) player.head_vel.x = player.speed;
+	if (up.pressed && player.head_grounded) 
 	{	
-		head_vel.y = player.jump_speed;
-		tail_vel.y += player.jump_speed / 2.f;
+		player.head_vel.y = player.jump_speed;
+		player.tail_vel.y += player.jump_speed / 2.f;
 	}
 
-	glm::vec2 disp = (head_pos - tail_pos);
-	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
+	glm::vec2 disp = (player.head_pos - player.tail_pos);
+	float dist = std::max(0.f, glm::distance(player.head_pos, player.tail_pos) - playerlength);
 	if (disp != glm::vec2(0.f)) {
 		glm::vec2 spring_force = glm::normalize(disp) * dist * k;
-		tail_vel += spring_force * elapsed;
+		player.tail_vel += spring_force * elapsed;
 	}
 	
 	// Only pull on the head if it's not standing somewhere
-	//if(!head_grounded)
-	//	head_vel -= spring_force * elapsed;
+	//if(!player.head_grounded)
+	//	player.head_vel -= spring_force * elapsed;
 }
 
 void PlayMode::fixed_head_movement(float elapsed) {
-	head_vel.x = 0.f;
-	head_vel.y = 0.f;
+	player.head_vel.x = 0.f;
+	player.head_vel.y = 0.f;
 
 	// If the tail is grounded, just stay still
-	if(tail_grounded) {
-		tail_vel.x = 0.f;
-		tail_vel.y = 0.f;
+	if(player.tail_grounded) {
+		player.tail_vel.x = 0.f;
+		player.tail_vel.y = 0.f;
 	}
 
-	if (left.pressed) tail_vel.x = -player.speed;
-	else if (right.pressed) tail_vel.x = player.speed;
-	if (up.pressed && tail_grounded) tail_vel.y = player.jump_speed;
+	if (left.pressed) player.tail_vel.x = -player.speed;
+	else if (right.pressed) player.tail_vel.x = player.speed;
+	if (up.pressed && player.tail_grounded) player.tail_vel.y = player.jump_speed;
 
-	glm::vec2 disp = (head_pos - tail_pos);
-	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
+	glm::vec2 disp = (player.head_pos - player.tail_pos);
+	float dist = std::max(0.f, glm::distance(player.head_pos, player.tail_pos) - playerlength);
 	if (disp != glm::vec2(0.f)) {
 		glm::vec2 spring_force = glm::normalize(disp) * dist * k;
-		tail_vel += spring_force * elapsed;
+		player.tail_vel += spring_force * elapsed;
 	}
 }
 
 void PlayMode::fixed_tail_movement(float elapsed) {
-	//head_vel.x = 0;
-	//head_vel.y = 0;
-	tail_vel.x = 0.f;
-	tail_vel.y = 0.f;
-	if (left.pressed) head_vel.x = -player.speed;
-	else if (right.pressed) head_vel.x = player.speed;
-	if (up.pressed && head_grounded) head_vel.y = player.jump_speed;
+	//player.head_vel.x = 0;
+	//player.head_vel.y = 0;
+	player.tail_vel.x = 0.f;
+	player.tail_vel.y = 0.f;
+	if (left.pressed) player.head_vel.x = -player.speed;
+	else if (right.pressed) player.head_vel.x = player.speed;
+	if (up.pressed && player.head_grounded) player.head_vel.y = player.jump_speed;
 
-	glm::vec2 disp = (head_pos - tail_pos);
-	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
+	glm::vec2 disp = (player.head_pos - player.tail_pos);
+	float dist = std::max(0.f, glm::distance(player.head_pos, player.tail_pos) - playerlength);
 	if (disp != glm::vec2(0.f)) {
 		glm::vec2 spring_force = glm::normalize(disp) * dist * k;
-		head_vel -= spring_force * elapsed;
+		player.head_vel -= spring_force * elapsed;
 	}
 }
 
 void PlayMode::respawn() {
-	head_pos = head_start;
-	head_vel = glm::vec2(0.f, 0.f);
-	tail_pos = head_start;
-	tail_pos.x -= 1.f; //to give space between head and tail
-	tail_vel = glm::vec2(0.f, 0.f);
+	player.head_pos = head_start;
+	player.head_vel = glm::vec2(0.f, 0.f);
+	player.tail_pos = head_start;
+	player.tail_pos.x -= 1.f; //to give space between head and tail
+	player.tail_vel = glm::vec2(0.f, 0.f);
 }
