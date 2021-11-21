@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 #include "Collisions.hpp"
+#include "KeyPoint.hpp"
 
 struct Player {
 
@@ -23,9 +24,12 @@ struct Player {
 
 	bool head_grounded = false;
 	bool tail_grounded = false;
+	bool fixed_head = false;
+	bool fixed_tail = false;
 
 	void collide_segments(const CollisionManager &cm, float radius, bool is_head);
 	bool grab_ledge(const CollisionManager &cm, glm::vec2& pos, float radius);
+	void do_auto_grab(std::vector<Grab_Point> &grab_points);
 	void free_movement(float elapsed, bool left, bool right, bool up);
 	void fixed_head_movement(float elapsed, bool left, bool right, bool up);
 	void fixed_tail_movement(float elapsed, bool left, bool right, bool up);

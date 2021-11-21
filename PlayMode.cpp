@@ -298,10 +298,10 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_e) {
 			//if (player.grab_ledge(collision_manager, player.head_pos, 1.f + grab_radius)) {
-			//	fixed_head = !fixed_head;
+			//	player.fixed_head = !player.fixed_head;
 			//}
 
-			fixed_head = false;
+			player.fixed_head = false;
 
 			return true;
 		}
@@ -362,21 +362,6 @@ void PlayMode::update(float elapsed) {
 	up.downs = 0;
 	down.downs = 0;
 	space.downs = 0;
-}
-
-/* Checks to see if the player has approached any grab points, and automatically grabs 
-   onto that point if they have */
-void PlayMode::do_auto_grab() {
-	for(Grab_Point &p : grab_points) {
-		float dist = glm::distance(p.position, player.head_pos);
-
-		// Only perform a grab upon entry into the grab radius
-		if(dist <= player.grab_radius && p.past_player_dist > player.grab_radius) {
-			fixed_head = true;
-		}
-
-		p.past_player_dist = dist;
-	}
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
@@ -614,7 +599,7 @@ void PlayMode::celebrate_draw(glm::uvec2 const &drawable_size) {
 
 void PlayMode::turn_cat() {
 	/*
-	if (!fixed_head) {
+	if (!player.fixed_head) {
 		if (player.head_vel.x > 0.f && direction) { //using direction to avoid unnecessary writes to rotation
 			cat_head->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 			direction = 0;
@@ -753,10 +738,10 @@ void PlayMode::player_phys_update(float elapsed) {
 	}
 	// If not pressing stretch, grabbing onto something, and the player has just recompressed, 
 	// let go and apply the velocity to both halves
-	else if (fixed_head && stretched && head_tail_dist <= 4.f) {
+	else if (player.fixed_head && stretched && head_tail_dist <= 4.f) {
 		stretched = false;
 
-		fixed_head = false;
+		player.fixed_head = false;
 		player.head_grounded = false;
 		player.head_vel += player.tail_vel *0.5f;
 		player.tail_vel *= 0.5f;
@@ -764,17 +749,17 @@ void PlayMode::player_phys_update(float elapsed) {
 		printf("Recompressed %f\n", player.head_vel.x);
 	}
 
-	do_auto_grab();
+	player.do_auto_grab(grab_points);
 
-	if (!fixed_head && !fixed_tail) {
+	if (!player.fixed_head && !player.fixed_tail) {
 		player.free_movement(elapsed, left.pressed, right.pressed, up.pressed);
-	} else if (fixed_head && fixed_tail) {
+	} else if (player.fixed_head && player.fixed_tail) {
 		player.head_vel.x = 0.f;
 		player.head_vel.y = 0.f;
 		player.tail_vel.x = 0.f;
 		player.tail_vel.y = 0.f;
 		std::cout << "you have stuck both your head and tail and cannot move\n";
-	} else if (fixed_head) {
+	} else if (player.fixed_head) {
 		player.fixed_head_movement(elapsed, left.pressed, right.pressed, up.pressed);
 	}
 

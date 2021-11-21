@@ -61,6 +61,21 @@ bool Player::grab_ledge(const CollisionManager &cm, glm::vec2& pos, float radius
 	return (!hits.empty());
 }
 
+/* Checks to see if the player has approached any grab points, and automatically grabs 
+   onto that point if they have */
+void Player::do_auto_grab(std::vector<Grab_Point> &grab_points) {
+	for(Grab_Point &p : grab_points) {
+		float dist = glm::distance(p.position, head_pos);
+
+		// Only perform a grab upon entry into the grab radius
+		if(dist <= grab_radius && p.past_player_dist > grab_radius) {
+			fixed_head = true;
+		}
+
+		p.past_player_dist = dist;
+	}
+}
+
 void Player::free_movement(float elapsed, bool left, bool right, bool up) {
 	// If the head is grounded, just stay still
 	if(head_grounded) {
