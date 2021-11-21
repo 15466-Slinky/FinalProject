@@ -16,7 +16,6 @@
 #include <random>
 
 #define GRAVITY 10.f
-#define GRAB_RADIUS 1.5f
 #define DEATH_BOUND -50.f
 
 struct PlayMode : Mode {
