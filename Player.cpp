@@ -173,6 +173,66 @@ void Player::turn_cat() {
 	tail->rotation = glm::quatLookAt(glm::normalize(disp), up) * glm::quat(up * (3.14159f / 2));
 }
 
+void Player::phys_update(float elapsed, const CollisionManager &cm, bool left, bool right, bool up, bool space, std::vector<Grab_Point> &grab_points, float &timer, float fixed_time) {
+	// Apply gravity
+	head_vel.y -= elapsed * GRAVITY;
+	tail_vel.y -= elapsed * GRAVITY;
+	for (auto b : body) {
+		b.vel -= elapsed * GRAVITY;
+	}
+	
+	length = space ? max_length : 1.f;
+
+	float head_tail_dist = glm::distance(head_pos, tail_pos);
+
+	if (space) {
+		if(head_tail_dist > 4.f)
+			stretched = true;
+	}
+	// If not pressing stretch, grabbing onto something, and the player has just recompressed, 
+	// let go and apply the velocity to both halves
+	else if (fixed_head && stretched && head_tail_dist <= 4.f) {
+		stretched = false;
+
+		fixed_head = false;
+		head_grounded = false;
+		head_vel += tail_vel *0.5f;
+		tail_vel *= 0.5f;
+
+		printf("Recompressed %f\n", head_vel.x);
+	}
+
+	do_auto_grab(grab_points);
+
+	if (!fixed_head && !fixed_tail) {
+		free_movement(elapsed, left, right, up);
+	} else if (fixed_head && fixed_tail) {
+		head_vel.x = 0.f;
+		head_vel.y = 0.f;
+		tail_vel.x = 0.f;
+		tail_vel.y = 0.f;
+		//std::cout << "you have stuck both your head and tail and cannot move\n";
+	} else if (fixed_head) {
+		fixed_head_movement(elapsed, left, right, up);
+	}
+
+	// Do physics update
+	head_pos += head_vel * elapsed;
+	tail_pos += tail_vel * elapsed;
+
+	// Check collision with the walls and adjust the velocities accordingly
+	collide_segments(cm, 1.f, true);
+	collide_segments(cm, 1.f, false);
+
+	// Air resistance only FIXED UPDATE
+	timer += elapsed;
+	while (timer > fixed_time) {
+		head_vel *= 0.995f;
+		tail_vel *= 0.995f;
+		timer -= fixed_time;
+	}
+}
+
 void Player::respawn() {
 	head_pos = head_respawn_pos;
 	head_vel = glm::vec2(0.f);

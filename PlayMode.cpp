@@ -353,7 +353,7 @@ void PlayMode::update(float elapsed) {
 	update_checkpoints();
 	if (activating_checkpoint) activate_checkpoint(curr_checkpoint_id, elapsed);
 
-	player_phys_update(elapsed);
+	player.phys_update(elapsed, collision_manager, left.pressed, right.pressed, up.pressed, space.pressed, grab_points, timer, fixed_time);
 	animation_update(elapsed);
 
 	//reset button press counters:
@@ -662,11 +662,11 @@ void PlayMode::interact_objects(float elapsed) {
 				// increase player length
 				player.max_length
 		 += 10.f;
-				player_body.push_back(Spring_Point(player.head_pos, glm::vec2(0.f, 0.f)));
-				size_t num_springs = player_body.size();
+				player.body.push_back(Spring_Point(player.head_pos, glm::vec2(0.f, 0.f)));
+				size_t num_springs = player.body.size();
 				glm::vec2 disp = (player.head_pos - player.tail_pos) / (float)num_springs;
 				for (uint8_t j = 0; j < num_springs; ++j) {
-					Spring_Point p = player_body[j];
+					Spring_Point p = player.body[j];
 					p.pos = player.tail_pos + glm::vec2(disp.x * j, disp.y * j); //distribute evenly
 					p.vel = glm::vec2(0.f, 0.f); //reset velocity to avoid potential issues
 				}
@@ -689,64 +689,4 @@ void PlayMode::animation_update(float elapsed) {
 
 	//update camera
 	dynamic_camera.update(elapsed, (player.head_pos + player.tail_pos) / 2.f, space.pressed, glm::distance(player.head_pos, player.tail_pos) / player.length);
-}
-
-void PlayMode::player_phys_update(float elapsed) {
-	// Apply gravity
-	player.head_vel.y -= elapsed * GRAVITY;
-	player.tail_vel.y -= elapsed * GRAVITY;
-	for (auto body : player_body) {
-		body.vel -= elapsed * GRAVITY;
-	}
-	
-	player.length = space.pressed ? player.max_length : 1.f;
-
-	float head_tail_dist = glm::distance(player.head_pos, player.tail_pos);
-
-	if (space.pressed) {
-		if(head_tail_dist > 4.f)
-			stretched = true;
-	}
-	// If not pressing stretch, grabbing onto something, and the player has just recompressed, 
-	// let go and apply the velocity to both halves
-	else if (player.fixed_head && stretched && head_tail_dist <= 4.f) {
-		stretched = false;
-
-		player.fixed_head = false;
-		player.head_grounded = false;
-		player.head_vel += player.tail_vel *0.5f;
-		player.tail_vel *= 0.5f;
-
-		printf("Recompressed %f\n", player.head_vel.x);
-	}
-
-	player.do_auto_grab(grab_points);
-
-	if (!player.fixed_head && !player.fixed_tail) {
-		player.free_movement(elapsed, left.pressed, right.pressed, up.pressed);
-	} else if (player.fixed_head && player.fixed_tail) {
-		player.head_vel.x = 0.f;
-		player.head_vel.y = 0.f;
-		player.tail_vel.x = 0.f;
-		player.tail_vel.y = 0.f;
-		std::cout << "you have stuck both your head and tail and cannot move\n";
-	} else if (player.fixed_head) {
-		player.fixed_head_movement(elapsed, left.pressed, right.pressed, up.pressed);
-	}
-
-	// Do phyics update
-	player.head_pos += player.head_vel * elapsed;
-	player.tail_pos += player.tail_vel * elapsed;
-
-	// Check collision with the walls and adjust the velocities accordingly
-	player.collide_segments(collision_manager, 1.f, true);
-	player.collide_segments(collision_manager, 1.f, false);
-
-	// Air resistance only FIXED UPDATE
-	timer += elapsed;
-	while (timer > fixed_time) {
-		player.head_vel *= 0.995f;
-		player.tail_vel *= 0.995f;
-		timer -= fixed_time;
-	}
 }

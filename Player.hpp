@@ -6,6 +6,10 @@
 #include "KeyPoint.hpp"
 #include "Scene.hpp"
 
+#ifndef GRAVITY
+#define GRAVITY 10.f
+#endif
+
 struct Player {
 
 	Player() = default;
@@ -28,6 +32,11 @@ struct Player {
 	bool fixed_head = false;
 	bool fixed_tail = false;
 
+	// Indicates if the player has extended the player size, and the player hasn't yet compressed back to actual size
+	bool stretched = false;
+
+	std::vector<Spring_Point> body;
+
 	Scene::Transform* head = nullptr;
 	Scene::Transform* tail = nullptr;
 
@@ -38,5 +47,6 @@ struct Player {
 	void fixed_head_movement(float elapsed, bool left, bool right, bool up);
 	void fixed_tail_movement(float elapsed, bool left, bool right, bool up);
 	void turn_cat();
+	void phys_update(float elapsed, const CollisionManager &cm, bool left, bool right, bool up, bool space, std::vector<Grab_Point> &grab_points, float &timer, float fixed_time);
 	void respawn();
 };

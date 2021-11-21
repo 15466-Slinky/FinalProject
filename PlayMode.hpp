@@ -16,7 +16,10 @@
 #include <deque>
 #include <random>
 
+#ifndef GRAVITY
 #define GRAVITY 10.f
+#endif
+
 #define DEATH_BOUND -50.f
 
 struct PlayMode : Mode {
@@ -80,7 +83,6 @@ struct PlayMode : Mode {
 	//----- helper functions ----- see Trello documentation for details
 
 	GLuint load_texture(std::string filename);
-	void player_phys_update(float elapsed);
 	void animation_update(float elapsed);
 	void interact_objects(float elapsed);
 
@@ -100,8 +102,8 @@ struct PlayMode : Mode {
 	void celebrate_draw(glm::uvec2 const &drawable_size);
 
 	//----- movement updates -----
-	void update_body();
-	void animate_feet();
+	void update_body(); //TODO: move into Player.cpp
+	void animate_feet(); //TODO: move into Player.cpp
 	float timer = 0.0f;
 	float fixed_time = 0.015f;
 
@@ -134,11 +136,6 @@ struct PlayMode : Mode {
 	// Player motion
 	uint8_t direction = 0; //facing right
 	uint8_t tail_direction = 0;
-
-	std::vector<Spring_Point> player_body;
-
-	// Indicates if the player has extended the player size, and the player hasn't yet compressed back to actual size
-	bool stretched = false;
 
 	float eat_dist = 3.0f;		// distance range that consider hit object
 	float sensing_dist = 20.0f;	// sensing distance, should be further than eat_dist
