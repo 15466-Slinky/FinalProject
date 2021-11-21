@@ -15,8 +15,6 @@
 #include <deque>
 #include <random>
 
-#define PLAYER_SPEED 10.f
-#define JUMP_SPEED 10.f
 #define GRAVITY 10.f
 #define GRAB_RADIUS 1.5f
 #define DEATH_BOUND -50.f
@@ -155,6 +153,9 @@ struct PlayMode : Mode {
 	} left, right, down, up, space;
 	bool fixed_head = false;
 	bool fixed_tail = false;
+
+	//player struct
+	Player player;
 
 	// Player motion
 	glm::vec2 head_start;

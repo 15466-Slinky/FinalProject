@@ -847,12 +847,12 @@ void PlayMode::free_movement(float elapsed) {
 		head_vel.y = 0.f;
 	}
 
-	if (left.pressed) head_vel.x = -PLAYER_SPEED;
-	else if (right.pressed) head_vel.x = PLAYER_SPEED;
+	if (left.pressed) head_vel.x = -player.speed;
+	else if (right.pressed) head_vel.x = player.speed;
 	if (up.pressed && head_grounded) 
 	{	
-		head_vel.y = JUMP_SPEED;
-		tail_vel.y += JUMP_SPEED / 2.f;
+		head_vel.y = player.jump_speed;
+		tail_vel.y += player.jump_speed / 2.f;
 	}
 
 	glm::vec2 disp = (head_pos - tail_pos);
@@ -877,9 +877,9 @@ void PlayMode::fixed_head_movement(float elapsed) {
 		tail_vel.y = 0.f;
 	}
 
-	if (left.pressed) tail_vel.x = -PLAYER_SPEED;
-	else if (right.pressed) tail_vel.x = PLAYER_SPEED;
-	if (up.pressed && tail_grounded) tail_vel.y = JUMP_SPEED;
+	if (left.pressed) tail_vel.x = -player.speed;
+	else if (right.pressed) tail_vel.x = player.speed;
+	if (up.pressed && tail_grounded) tail_vel.y = player.jump_speed;
 
 	glm::vec2 disp = (head_pos - tail_pos);
 	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
@@ -894,9 +894,9 @@ void PlayMode::fixed_tail_movement(float elapsed) {
 	//head_vel.y = 0;
 	tail_vel.x = 0.f;
 	tail_vel.y = 0.f;
-	if (left.pressed) head_vel.x = -PLAYER_SPEED;
-	else if (right.pressed) head_vel.x = PLAYER_SPEED;
-	if (up.pressed && head_grounded) head_vel.y = JUMP_SPEED;
+	if (left.pressed) head_vel.x = -player.speed;
+	else if (right.pressed) head_vel.x = player.speed;
+	if (up.pressed && head_grounded) head_vel.y = player.jump_speed;
 
 	glm::vec2 disp = (head_pos - tail_pos);
 	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - playerlength);
