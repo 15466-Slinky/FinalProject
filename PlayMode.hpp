@@ -7,6 +7,7 @@
 
 #include "Collisions.hpp"
 #include "DynamicCamera.hpp"
+#include "Player.hpp"
 
 #include <glm/glm.hpp>
 
