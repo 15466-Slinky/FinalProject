@@ -7,6 +7,7 @@
 
 #include "Collisions.hpp"
 #include "DynamicCamera.hpp"
+#include "Player.hpp"
 
 #include <glm/glm.hpp>
 
@@ -14,10 +15,7 @@
 #include <deque>
 #include <random>
 
-#define PLAYER_SPEED 10.f
-#define JUMP_SPEED 10.f
 #define GRAVITY 10.f
-#define GRAB_RADIUS 1.5f
 #define DEATH_BOUND -50.f
 
 struct PlayMode : Mode {
@@ -117,13 +115,7 @@ struct PlayMode : Mode {
 	void celebrate_draw(glm::uvec2 const &drawable_size);
 
 	//----- movement updates -----
-	void collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded);
-	bool grab_ledge(glm::vec2& pos, float radius);
 	void do_auto_grab();
-	void free_movement(float elapsed);
-	void fixed_head_movement(float elapsed);
-	void fixed_tail_movement(float elapsed);
-	void respawn();
 	void turn_cat();
 	void update_body();
 	void animate_feet();
@@ -155,16 +147,10 @@ struct PlayMode : Mode {
 	bool fixed_head = false;
 	bool fixed_tail = false;
 
+	//player struct
+	Player player;
+
 	// Player motion
-	glm::vec2 head_start;
-	glm::vec2 tail_start;
-
-	glm::vec2 head_pos, tail_pos;
-	glm::vec2 head_vel, tail_vel;
-
-	bool head_grounded;
-	bool tail_grounded;
-
 	uint8_t direction = 0; //facing right
 	uint8_t tail_direction = 0;
 
@@ -172,11 +158,6 @@ struct PlayMode : Mode {
 
 	// Indicates if the player has extended the player size, and the player hasn't yet compressed back to actual size
 	bool stretched = false;
-
-	float playerlength = 5.f; //length of spring
-	float maxlength = 10.f; //maximum length
-	float k = 20.f; //spring constant
-	float grab_radius = 0.5f; //grabbable radius
 
 	float eat_dist = 3.0f;		// distance range that consider hit object
 	float sensing_dist = 20.0f;	// sensing distance, should be further than eat_dist

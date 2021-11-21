@@ -60,7 +60,7 @@ std::vector<CollisionManager::line_segment> CollisionManager::get_lines_all(cons
 }
 
 //performs circle-line-segment collisions on a circle and the line_segments and returns the points of intersection
-std::vector<CollisionManager::intersection> CollisionManager::get_collisions_all(const CollisionManager::circle &c) {
+std::vector<CollisionManager::intersection> CollisionManager::get_collisions_all(const CollisionManager::circle &c) const{
 	//https://stackoverflow.com/questions/1073336/circle-line-segment-collision-detection-algorithm
 	std::vector<CollisionManager::intersection> collision_data;
 
@@ -113,7 +113,7 @@ std::vector<CollisionManager::intersection> CollisionManager::get_collisions_all
 }
 
 //performs capsule collision between a circle and a line segment and returns the point of intersection
-CollisionManager::intersection CollisionManager::get_capsule_collision(const CollisionManager::circle &c, const CollisionManager::line_segment &l, bool &is_hit) {
+CollisionManager::intersection CollisionManager::get_capsule_collision(const CollisionManager::circle &c, const CollisionManager::line_segment &l, bool &is_hit) const {
 	glm::vec2 point = c.center;
 	float radius = c.radius;
 	glm::vec2 start = l.ep1;

@@ -47,6 +47,6 @@ struct CollisionManager {
 	//Collision Functions
 	std::vector<line_segment> get_lines(const Scene::Transform* platform);
 	std::vector<line_segment> get_lines_all(const std::vector<Scene::Transform*> platforms);
-	std::vector<intersection> get_collisions_all(const circle &c);
-	intersection get_capsule_collision(const circle &c, const line_segment &l, bool &is_hit);
+	std::vector<intersection> get_collisions_all(const circle &c) const;
+	intersection get_capsule_collision(const circle &c, const line_segment &l, bool &is_hit) const;
 };
