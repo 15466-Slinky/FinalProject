@@ -143,20 +143,20 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 			drawable.pipeline.textures[0].texture = tex;
 		}
 	}
+
+	player = Player(cat_head, cat_tail, glm::vec2(cat_head->position), glm::vec2(cat_tail->position), glm::vec2(0.f), glm::vec2(0.f));
 	
 	// check all loaded
 	if (platforms.empty()) throw std::runtime_error("Platforms not found.");
 	assert(platforms.size() == 9); // make sure platform count matched
 	if (checkpoints.empty()) throw std::runtime_error("Checkpoints not found.");
 	assert(checkpoints.size() == 1); //make sure the checkpoint count matches
-	if(cat_head == nullptr) throw std::runtime_error("Cat head not found.");
-	if(cat_tail == nullptr) throw std::runtime_error("Cat tail not found.");
+	if(player.head == nullptr) throw std::runtime_error("Cat head not found.");
+	if(player.tail == nullptr) throw std::runtime_error("Cat tail not found.");
 	if(doughnut == nullptr) throw std::runtime_error("Doughnut not found.");
 
-	player = Player(glm::vec2(cat_head->position), glm::vec2(cat_tail->position), glm::vec2(0.f), glm::vec2(0.f));
-
 	//TODO: reposition doughnut to test object interaction, need to remove later
-	//doughnut->position = cat_tail->position - glm::vec3(5.0f, 0.0f, 0.0f);
+	//doughnut->position = player.tail->position - glm::vec3(5.0f, 0.0f, 0.0f);
 
 	sort_checkpoints();
 	curr_checkpoint_id = -1; //we haven't reached any checkpoint yet
@@ -365,11 +365,11 @@ void PlayMode::update(float elapsed) {
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
-	cat_head->position.x = player.head_pos.x;
-	cat_head->position.y = player.head_pos.y;
+	player.head->position.x = player.head_pos.x;
+	player.head->position.y = player.head_pos.y;
 
-	cat_tail->position.x = player.tail_pos.x;
-	cat_tail->position.y = player.tail_pos.y;
+	player.tail->position.x = player.tail_pos.x;
+	player.tail->position.y = player.tail_pos.y;
 	
 	dynamic_camera.draw(drawable_size);
 
@@ -597,38 +597,9 @@ void PlayMode::celebrate_draw(glm::uvec2 const &drawable_size) {
 	GL_ERRORS(); //PARANOIA: print errors just in case we did something wrong.
 }
 
-void PlayMode::turn_cat() {
-	/*
-	if (!player.fixed_head) {
-		if (player.head_vel.x > 0.f && direction) { //using direction to avoid unnecessary writes to rotation
-			cat_head->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-			direction = 0;
-		}
-		else if (player.head_vel.x < 0.f && !direction) {
-			cat_head->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
-			direction = 1;
-		}
-	}
-	if (player.tail_vel.x > 0.f && tail_direction) {
-		cat_tail->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-		tail_direction = 0;
-	}
-	else if (player.tail_vel.x < 0.f && !tail_direction) {
-		cat_tail->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
-		tail_direction = 1;
-	}
-	*/
-
-	glm::vec3 disp = cat_head->position - cat_tail->position;
-	glm::vec3 up(0.f, 1.f, 0.f);
-
-	cat_head->rotation = glm::quatLookAt(glm::normalize(disp), up) * glm::quat(up * (3.14159f / 2));
-	cat_tail->rotation = glm::quatLookAt(glm::normalize(disp), up) * glm::quat(up * (3.14159f / 2));
-}
-
 /* Dynamic player meshing (WIP) */
 void PlayMode::update_body() {
-	cat_body->transform->position = (cat_tail->position);
+	cat_body->transform->position = (player.tail->position);
 
 	//vertices will be accumulated into this list and then uploaded+drawn at the end of this function:
 	//std::vector< Vertex > vertices;
@@ -661,7 +632,7 @@ void PlayMode::interact_objects(float elapsed) {
 
 		}
 		else {
-			if (glm::abs(glm::length(cat_head->position - fish->position) - sensing_dist) < 1.0f) {
+			if (glm::abs(glm::length(player.head->position - fish->position) - sensing_dist) < 1.0f) {
 				// near fish, play nt effect
 				// Don't play the sense sound effect, it's confusing
 				//nt_SFX = Sound::play(*nt_effect_sample, 1.0f, 0.0f);
@@ -678,8 +649,8 @@ void PlayMode::interact_objects(float elapsed) {
 
 		}
 		else {
-			if (glm::abs(glm::length(cat_head->position - fish->position) - eat_dist) < 1.0f ||
-				glm::abs(glm::length(cat_tail->position - fish->position) - eat_dist) < 1.0f) {
+			if (glm::abs(glm::length(player.head->position - fish->position) - eat_dist) < 1.0f ||
+				glm::abs(glm::length(player.tail->position - fish->position) - eat_dist) < 1.0f) {
 				// near fish, play nt effect
 				cat_meow_SFX = Sound::play(*cat_meow_sample, 1.0f, 0.0f);
 
@@ -713,7 +684,7 @@ void PlayMode::animation_update(float elapsed) {
 	spin_fish(elapsed);
 
 	//reorient cat
-	turn_cat();
+	player.turn_cat();
 	update_body();
 
 	//update camera

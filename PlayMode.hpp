@@ -100,8 +100,6 @@ struct PlayMode : Mode {
 	void celebrate_draw(glm::uvec2 const &drawable_size);
 
 	//----- movement updates -----
-	void do_auto_grab();
-	void turn_cat();
 	void update_body();
 	void animate_feet();
 	float timer = 0.0f;

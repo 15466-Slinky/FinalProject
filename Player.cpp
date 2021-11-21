@@ -2,9 +2,11 @@
 
 #include <vector>
 
-Player::Player(glm::vec2 head_pos_, glm::vec2 tail_pos_, glm::vec2 head_vel_, glm::vec2 tail_vel_)
+Player::Player(Scene::Transform *cat_head, Scene::Transform* cat_tail, glm::vec2 head_pos_, glm::vec2 tail_pos_, glm::vec2 head_vel_, glm::vec2 tail_vel_)
 	: head_pos{head_pos_}, tail_pos{tail_pos_}, head_vel{head_vel_}, tail_vel{tail_vel_}
 {
+	head = cat_head;
+	tail = cat_tail;
 	head_respawn_pos = head_pos;
 	tail_respawn_pos = tail_pos;
 }
@@ -140,6 +142,35 @@ void Player::fixed_tail_movement(float elapsed, bool left, bool right, bool up) 
 		glm::vec2 spring_force = glm::normalize(disp) * dist * k;
 		head_vel -= spring_force * elapsed;
 	}
+}
+
+void Player::turn_cat() {
+	/*
+	if (!player.fixed_head) {
+		if (player.head_vel.x > 0.f && direction) { //using direction to avoid unnecessary writes to rotation
+			head->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+			direction = 0;
+		}
+		else if (player.head_vel.x < 0.f && !direction) {
+			head->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
+			direction = 1;
+		}
+	}
+	if (player.tail_vel.x > 0.f && tail_direction) {
+		cat_tail->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+		tail_direction = 0;
+	}
+	else if (player.tail_vel.x < 0.f && !tail_direction) {
+		cat_tail->rotation = glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
+		tail_direction = 1;
+	}
+	*/
+
+	glm::vec3 disp = head->position - tail->position;
+	glm::vec3 up(0.f, 1.f, 0.f);
+
+	head->rotation = glm::quatLookAt(glm::normalize(disp), up) * glm::quat(up * (3.14159f / 2));
+	tail->rotation = glm::quatLookAt(glm::normalize(disp), up) * glm::quat(up * (3.14159f / 2));
 }
 
 void Player::respawn() {
