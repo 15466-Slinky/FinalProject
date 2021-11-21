@@ -7,7 +7,7 @@
 struct Player {
 
 	Player() = default;
-	Player(glm::vec2 head_pos_, glm::vec2 tail_pos_);
+	Player(glm::vec2 head_pos_, glm::vec2 tail_pos_, glm::vec2 head_vel_, glm::vec2 tail_vel_);
 
 	float speed = 10.f;
 	float jump_speed = 10.f;
@@ -20,6 +20,7 @@ struct Player {
 	bool head_grounded = false;
 	bool tail_grounded = false;
 
-	void collide_segments(CollisionManager &cm, float radius, bool is_head);
+	void collide_segments(const CollisionManager &cm, float radius, bool is_head);
+	bool grab_ledge(const CollisionManager &cm, glm::vec2& pos, float radius);
 	void respawn();
 };

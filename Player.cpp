@@ -2,14 +2,14 @@
 
 #include <vector>
 
-Player::Player(glm::vec2 head_pos_, glm::vec2 tail_pos_)
-	: head_pos{head_pos_}, tail_pos{tail_pos_} 
+Player::Player(glm::vec2 head_pos_, glm::vec2 tail_pos_, glm::vec2 head_vel_, glm::vec2 tail_vel_)
+	: head_pos{head_pos_}, tail_pos{tail_pos_}, head_vel{head_vel_}, tail_vel{tail_vel_}
 {
 	head_respawn_pos = head_pos;
 	tail_respawn_pos = tail_pos;
 }
 
-void Player::collide_segments(CollisionManager &cm, float radius, bool is_head) {
+void Player::collide_segments(const CollisionManager &cm, float radius, bool is_head) {
 	glm::vec2 pos;
 	glm::vec2 vel;
 	bool grounded = false;
@@ -22,7 +22,7 @@ void Player::collide_segments(CollisionManager &cm, float radius, bool is_head) 
 		vel = tail_vel;
 	}
 
-	for(CollisionManager::line_segment &ls : cm.line_segments) {
+	for(const CollisionManager::line_segment &ls : cm.line_segments) {
 		CollisionManager::circle c(pos, radius);
 
 		bool is_hit = false;
@@ -53,6 +53,12 @@ void Player::collide_segments(CollisionManager &cm, float radius, bool is_head) 
 		tail_vel = vel;
 		tail_grounded = grounded;
 	}
+}
+
+bool Player::grab_ledge(const CollisionManager &cm, glm::vec2& pos, float radius) {
+	CollisionManager::circle c(pos, radius);
+	std::vector<CollisionManager::intersection> hits = cm.get_collisions_all(c);
+	return (!hits.empty());
 }
 
 void Player::respawn() {

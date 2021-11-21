@@ -153,17 +153,14 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	if(cat_tail == nullptr) throw std::runtime_error("Cat tail not found.");
 	if(doughnut == nullptr) throw std::runtime_error("Doughnut not found.");
 
+	player = Player(glm::vec2(cat_head->position), glm::vec2(cat_tail->position), glm::vec2(0.f), glm::vec2(0.f));
+
 	//TODO: reposition doughnut to test object interaction, need to remove later
 	//doughnut->position = cat_tail->position - glm::vec3(5.0f, 0.0f, 0.0f);
 
 	sort_checkpoints();
 	curr_checkpoint_id = -1; //we haven't reached any checkpoint yet
 	next_checkpoint = checkpoints[0];
-
-	player = Player(glm::vec2(cat_head->position), glm::vec2(cat_tail->position));
-
-	player.head_vel = glm::vec2(0.f, 0.f);
-	player.tail_vel = glm::vec2(0.f, 0.f);
 
 	collision_manager = CollisionManager(platforms);
 
@@ -300,7 +297,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			space.pressed = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_e) {
-			//if (grab_ledge(player.head_pos, 1.f + grab_radius)) {
+			//if (player.grab_ledge(collision_manager, player.head_pos, 1.f + grab_radius)) {
 			//	fixed_head = !fixed_head;
 			//}
 
@@ -666,12 +663,6 @@ void PlayMode::update_body() {
 
 	//cat_body->pipeline.count = 3;
 	cat_body->pipeline.count = 0;
-}
-
-bool PlayMode::grab_ledge(glm::vec2& pos, float radius) {
-	CollisionManager::circle c(pos, radius);
-	std::vector<CollisionManager::intersection> hits = collision_manager.get_collisions_all(c);
-	return (!hits.empty());
 }
 
 void PlayMode::interact_objects(float elapsed) {

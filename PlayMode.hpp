@@ -115,7 +115,6 @@ struct PlayMode : Mode {
 	void celebrate_draw(glm::uvec2 const &drawable_size);
 
 	//----- movement updates -----
-	bool grab_ledge(glm::vec2& pos, float radius);
 	void do_auto_grab();
 	void free_movement(float elapsed);
 	void fixed_head_movement(float elapsed);
@@ -155,12 +154,6 @@ struct PlayMode : Mode {
 	Player player;
 
 	// Player motion
-	glm::vec2 head_pos, tail_pos;
-	glm::vec2 head_vel, tail_vel;
-
-	bool head_grounded;
-	bool tail_grounded;
-
 	uint8_t direction = 0; //facing right
 	uint8_t tail_direction = 0;
 
