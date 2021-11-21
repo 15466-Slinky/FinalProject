@@ -115,7 +115,6 @@ struct PlayMode : Mode {
 	void celebrate_draw(glm::uvec2 const &drawable_size);
 
 	//----- movement updates -----
-	void collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded);
 	bool grab_ledge(glm::vec2& pos, float radius);
 	void do_auto_grab();
 	void free_movement(float elapsed);

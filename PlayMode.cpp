@@ -183,6 +183,8 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	camera = &scene.cameras.front();
 	dynamic_camera = DynamicCamera(camera, glm::vec3(0.f), 9.f, 50.f);
 
+	player = Player();
+
 	//start music loop playing:
 	bgm_loop = Sound::loop(*bgm_loop_sample, 1.0f, 0.0f);
 
@@ -678,32 +680,6 @@ void PlayMode::update_body() {
 	cat_body->pipeline.count = 0;
 }
 
-void PlayMode::collide_segments(glm::vec2 &pos, glm::vec2 &vel, float radius, bool &grounded) {
-	grounded = false;
-
-	for(CollisionManager::line_segment &ls : collision_manager.line_segments) {
-		CollisionManager::circle c(pos, radius);
-
-		bool is_hit = false;
-		CollisionManager::intersection hit = collision_manager.get_capsule_collision(c, ls, is_hit);
-
-		if(is_hit) {
-			pos = hit.point_of_intersection;
-
-			// Project the velocity onto the normal, and subtract that component so
-			// vel is perpendicular
-			float d = glm::dot(hit.surface_normal, vel);
-			if (d > 0.f) d = 0.f;
-			vel -= hit.surface_normal * d;
-
-			if(hit.surface_normal.y > 0.5f) {
-				grounded = true;
-			}
-		}
-
-	}
-}
-
 bool PlayMode::grab_ledge(glm::vec2& pos, float radius) {
 	CollisionManager::circle c(pos, radius);
 	std::vector<CollisionManager::intersection> hits = collision_manager.get_collisions_all(c);
@@ -828,8 +804,8 @@ void PlayMode::player_phys_update(float elapsed) {
 	tail_pos += tail_vel * elapsed;
 
 	// Check collision with the walls and adjust the velocities accordingly
-	collide_segments(head_pos, head_vel, 1.f, head_grounded);
-	collide_segments(tail_pos, tail_vel, 1.f, tail_grounded);
+	player.collide_segments(collision_manager, head_pos, head_vel, 1.f, head_grounded);
+	player.collide_segments(collision_manager, tail_pos, tail_vel, 1.f, tail_grounded);
 
 	// Air resistance only FIXED UPDATE
 	timer += elapsed;
