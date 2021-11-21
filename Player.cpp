@@ -88,6 +88,45 @@ void Player::free_movement(float elapsed, bool left, bool right, bool up) {
 	//	head_vel -= spring_force * elapsed;
 }
 
+void Player::fixed_head_movement(float elapsed, bool left, bool right, bool up) {
+	head_vel.x = 0.f;
+	head_vel.y = 0.f;
+
+	// If the tail is grounded, just stay still
+	if(tail_grounded) {
+		tail_vel.x = 0.f;
+		tail_vel.y = 0.f;
+	}
+
+	if (left) tail_vel.x = -speed;
+	else if (right) tail_vel.x = speed;
+	if (up && tail_grounded) tail_vel.y = jump_speed;
+
+	glm::vec2 disp = (head_pos - tail_pos);
+	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - length);
+	if (disp != glm::vec2(0.f)) {
+		glm::vec2 spring_force = glm::normalize(disp) * dist * k;
+		tail_vel += spring_force * elapsed;
+	}
+}
+
+void Player::fixed_tail_movement(float elapsed, bool left, bool right, bool up) {
+	//head_vel.x = 0;
+	//head_vel.y = 0;
+	tail_vel.x = 0.f;
+	tail_vel.y = 0.f;
+	if (left) head_vel.x = -speed;
+	else if (right) head_vel.x = speed;
+	if (up && head_grounded) head_vel.y = jump_speed;
+
+	glm::vec2 disp = (head_pos - tail_pos);
+	float dist = std::max(0.f, glm::distance(head_pos, tail_pos) - length);
+	if (disp != glm::vec2(0.f)) {
+		glm::vec2 spring_force = glm::normalize(disp) * dist * k;
+		head_vel -= spring_force * elapsed;
+	}
+}
+
 void Player::respawn() {
 	head_pos = head_respawn_pos;
 	head_vel = glm::vec2(0.f);

@@ -116,8 +116,6 @@ struct PlayMode : Mode {
 
 	//----- movement updates -----
 	void do_auto_grab();
-	void fixed_head_movement(float elapsed);
-	void fixed_tail_movement(float elapsed);
 	void turn_cat();
 	void update_body();
 	void animate_feet();

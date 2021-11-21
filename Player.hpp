@@ -27,5 +27,7 @@ struct Player {
 	void collide_segments(const CollisionManager &cm, float radius, bool is_head);
 	bool grab_ledge(const CollisionManager &cm, glm::vec2& pos, float radius);
 	void free_movement(float elapsed, bool left, bool right, bool up);
+	void fixed_head_movement(float elapsed, bool left, bool right, bool up);
+	void fixed_tail_movement(float elapsed, bool left, bool right, bool up);
 	void respawn();
 };

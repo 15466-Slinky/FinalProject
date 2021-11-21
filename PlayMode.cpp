@@ -775,7 +775,7 @@ void PlayMode::player_phys_update(float elapsed) {
 		player.tail_vel.y = 0.f;
 		std::cout << "you have stuck both your head and tail and cannot move\n";
 	} else if (fixed_head) {
-		fixed_head_movement(elapsed);
+		player.fixed_head_movement(elapsed, left.pressed, right.pressed, up.pressed);
 	}
 
 	// Do phyics update
@@ -792,44 +792,5 @@ void PlayMode::player_phys_update(float elapsed) {
 		player.head_vel *= 0.995f;
 		player.tail_vel *= 0.995f;
 		timer -= fixed_time;
-	}
-}
-
-void PlayMode::fixed_head_movement(float elapsed) {
-	player.head_vel.x = 0.f;
-	player.head_vel.y = 0.f;
-
-	// If the tail is grounded, just stay still
-	if(player.tail_grounded) {
-		player.tail_vel.x = 0.f;
-		player.tail_vel.y = 0.f;
-	}
-
-	if (left.pressed) player.tail_vel.x = -player.speed;
-	else if (right.pressed) player.tail_vel.x = player.speed;
-	if (up.pressed && player.tail_grounded) player.tail_vel.y = player.jump_speed;
-
-	glm::vec2 disp = (player.head_pos - player.tail_pos);
-	float dist = std::max(0.f, glm::distance(player.head_pos, player.tail_pos) - player.length);
-	if (disp != glm::vec2(0.f)) {
-		glm::vec2 spring_force = glm::normalize(disp) * dist * player.k;
-		player.tail_vel += spring_force * elapsed;
-	}
-}
-
-void PlayMode::fixed_tail_movement(float elapsed) {
-	//player.head_vel.x = 0;
-	//player.head_vel.y = 0;
-	player.tail_vel.x = 0.f;
-	player.tail_vel.y = 0.f;
-	if (left.pressed) player.head_vel.x = -player.speed;
-	else if (right.pressed) player.head_vel.x = player.speed;
-	if (up.pressed && player.head_grounded) player.head_vel.y = player.jump_speed;
-
-	glm::vec2 disp = (player.head_pos - player.tail_pos);
-	float dist = std::max(0.f, glm::distance(player.head_pos, player.tail_pos) - player.length);
-	if (disp != glm::vec2(0.f)) {
-		glm::vec2 spring_force = glm::normalize(disp) * dist * player.k;
-		player.head_vel -= spring_force * elapsed;
 	}
 }
