@@ -162,9 +162,6 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 
 	player = Player(glm::vec2(cat_head->position), glm::vec2(cat_tail->position));
 
-	head_start = player.head_pos;
-	tail_start = player.tail_pos;
-
 	player.head_vel = glm::vec2(0.f, 0.f);
 	player.tail_vel = glm::vec2(0.f, 0.f);
 
@@ -346,7 +343,7 @@ void PlayMode::update(float elapsed) {
 
 	//respawn if player fell to their death
 	if (player.head_pos.y < DEATH_BOUND && player.tail_pos.y < DEATH_BOUND){
-		respawn();
+		player.respawn();
 
 		//play cat scream
 		cat_scream_SFX = Sound::play(*cat_scream_sample, 1.0f, 0.0f);
@@ -461,8 +458,8 @@ void PlayMode::update_checkpoints() {
 		if (curr_checkpoint_id != checkpoints.size() - 1)
 			next_checkpoint = checkpoints[curr_checkpoint_id + 1];
 
-		head_start = curr_checkpoint.position;
-		tail_start = head_start - glm::vec2(1.f, 0.f);
+		player.head_respawn_pos = curr_checkpoint.position;
+		player.tail_respawn_pos = player.head_respawn_pos - glm::vec2(1.f, 0.f);
 		activating_checkpoint = true;
 	}
 }
@@ -871,12 +868,4 @@ void PlayMode::fixed_tail_movement(float elapsed) {
 		glm::vec2 spring_force = glm::normalize(disp) * dist * k;
 		player.head_vel -= spring_force * elapsed;
 	}
-}
-
-void PlayMode::respawn() {
-	player.head_pos = head_start;
-	player.head_vel = glm::vec2(0.f, 0.f);
-	player.tail_pos = head_start;
-	player.tail_pos.x -= 1.f; //to give space between head and tail
-	player.tail_vel = glm::vec2(0.f, 0.f);
 }

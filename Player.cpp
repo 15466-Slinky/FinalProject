@@ -2,6 +2,13 @@
 
 #include <vector>
 
+Player::Player(glm::vec2 head_pos_, glm::vec2 tail_pos_)
+	: head_pos{head_pos_}, tail_pos{tail_pos_} 
+{
+	head_respawn_pos = head_pos;
+	tail_respawn_pos = tail_pos;
+}
+
 void Player::collide_segments(CollisionManager &cm, float radius, bool is_head) {
 	glm::vec2 pos;
 	glm::vec2 vel;
@@ -46,4 +53,12 @@ void Player::collide_segments(CollisionManager &cm, float radius, bool is_head) 
 		tail_vel = vel;
 		tail_grounded = grounded;
 	}
+}
+
+void Player::respawn() {
+	head_pos = head_respawn_pos;
+	head_vel = glm::vec2(0.f);
+	tail_pos = head_respawn_pos;
+	tail_pos.x -= 1.f; //to give space between head and tail
+	tail_vel = glm::vec2(0.f);
 }

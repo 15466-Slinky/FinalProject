@@ -120,7 +120,6 @@ struct PlayMode : Mode {
 	void free_movement(float elapsed);
 	void fixed_head_movement(float elapsed);
 	void fixed_tail_movement(float elapsed);
-	void respawn();
 	void turn_cat();
 	void update_body();
 	void animate_feet();
@@ -156,9 +155,6 @@ struct PlayMode : Mode {
 	Player player;
 
 	// Player motion
-	glm::vec2 head_start;
-	glm::vec2 tail_start;
-
 	glm::vec2 head_pos, tail_pos;
 	glm::vec2 head_vel, tail_vel;
 
