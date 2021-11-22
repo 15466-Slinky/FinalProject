@@ -12,7 +12,7 @@
 #include "hex_dump.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/string_cast.hpp>	//TODO: only for debug, can delete
 #include <glm/gtc/quaternion.hpp>
 
 #include <random>
