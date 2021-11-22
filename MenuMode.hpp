@@ -18,7 +18,7 @@ struct MenuMode : Mode {
 
 	//input tracking:
 	glm::vec2 clicked_pos = glm::vec2(std::numeric_limits<float>::max(),
-									std::numeric_limits<float>::max());	// mouse click position, respect to window, origin at top left
+									std::numeric_limits<float>::max());	// mouse click position, respect to window, origin at middle, [-1,1]
 
 	glm::vec2 mouse_pos = glm::vec2(std::numeric_limits<float>::max(),
 									std::numeric_limits<float>::max());	// mouse current position, respect to window
@@ -33,13 +33,11 @@ struct MenuMode : Mode {
 	glm::vec2 start_button_pos = glm::vec2(0.0f, -0.1f); //TODO: set button positions
 	glm::vec2 control_button_pos = glm::vec2(0.0f, -0.25f); //TODO: set button 
 
-	glm::vec2 highlight_pos = start_button_pos;
+	glm::vec2 highlight_pos = glm::vec2(0.3f, -0.05f);	// overlay menu options, (0.3f, -0.05f) or (0.3f, -0.1)
 	glm::mat4 hightlight_transform = glm::mat4(
 				0.21f, 0.0f, 0.0f, 0.0f,
 				0.0f, 0.09f, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
 				0.0f, 0.0f, 0.0f, 1.0f
-			)
-
-
+			);
 };

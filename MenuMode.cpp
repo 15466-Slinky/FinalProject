@@ -10,7 +10,8 @@
 
 
 #include <random>
-
+#include <iostream>	//TODO: only for debug, delete later
+	
 MenuMode::MenuMode() {
 }
 
@@ -28,11 +29,15 @@ bool MenuMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		// record clicked location
 
 		clicked_pos = glm::vec2(evt.motion.x, evt.motion.y);
+		clicked_pos.x = 2.0f * (clicked_pos.x / float(window_size.x)) - 1.0f;
+		clicked_pos.y = -1.0f * (2.0f * (clicked_pos.y / float(window_size.y)) - 1.0f);	// inverted
 		return true;
 	} else if (evt.type == SDL_MOUSEMOTION) {
 		// record current location, to hightlight option
 
 		mouse_pos = glm::vec2(evt.motion.x, evt.motion.y);
+		mouse_pos.x = 2.0f * (mouse_pos.x / float(window_size.x)) - 1.0f;
+		mouse_pos.y = -1.0f * (2.0f * (mouse_pos.y / float(window_size.y)) - 1.0f);
 		return true;
 	}
 
@@ -40,6 +45,17 @@ bool MenuMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void MenuMode::update(float elapsed) {
+	//TODO: delete later
+	//std::cout << "mouse_pose: " << glm::to_string(mouse_pos) << std::endl;
+
+	// update highlight
+	if(mouse_pos.x <= 0.0f){
+		if(mouse_pos.y >= -0.1f){
+			highlight_pos.y = -0.05f;
+		}else{
+			highlight_pos.y = -0.2f;
+		}
+	}
 	
 
 }
@@ -94,7 +110,7 @@ void MenuMode::draw(glm::uvec2 const &drawable_size) {
 				0.21f, 0.0f, 0.0f, 0.0f,
 				0.0f, 0.09f, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
-				-aspect + 0.3f, -0.05f, 0.0f, 1.0f
+				-aspect + highlight_pos.x, highlight_pos.y, 0.0f, 1.0f
 			),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00)		// color
 		);
