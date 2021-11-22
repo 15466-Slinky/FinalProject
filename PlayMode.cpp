@@ -304,6 +304,8 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		} else if (evt.type == SDL_KEYDOWN) {
 			if (evt.key.keysym.sym == SDLK_ESCAPE) {
+				//TODO: need to move everything that holds playmode inplace
+				Sound::stop_all_samples();
 				Mode::set_current(std::make_shared< MenuMode >());
 				return true;
 			} 
