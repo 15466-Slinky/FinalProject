@@ -17,11 +17,10 @@ struct MenuMode : Mode {
 	//----- game state -----
 
 	//input tracking:
-	glm::vec2 clicked_pos = glm::vec2(std::numeric_limits<float>::max(),
-									std::numeric_limits<float>::max());	// mouse click position, respect to window, origin at middle, [-1,1]
-
+	bool clicked = false;
+	char modeSelect = 'm';	// record selected mode, ('m', 'p', 'c') for menu, play, control
 	glm::vec2 mouse_pos = glm::vec2(std::numeric_limits<float>::max(),
-									std::numeric_limits<float>::max());	// mouse current position, respect to window
+									std::numeric_limits<float>::max());	// mouse current position respect to window, origin at middle, [-1,1]
 
 	int menu_select = 0;
 

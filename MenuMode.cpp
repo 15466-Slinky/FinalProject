@@ -1,4 +1,5 @@
 #include "MenuMode.hpp"
+#include "PlayMode.hpp"
 
 #include "DrawLines.hpp"
 #include "gl_errors.hpp"
@@ -20,21 +21,14 @@ MenuMode::~MenuMode() {
 
 
 bool MenuMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
-	// check where is mouse and which button is clicked
-
-	// make mouse always visible
-	SDL_SetRelativeMouseMode(SDL_FALSE);	 // TODO: further improvement, replace mouse with moving object
+	// check where is mouse and which button to be clicked
 
 	if (evt.type == SDL_MOUSEBUTTONDOWN) {
-		// record clicked location
+		clicked = true;
 
-		clicked_pos = glm::vec2(evt.motion.x, evt.motion.y);
-		clicked_pos.x = 2.0f * (clicked_pos.x / float(window_size.x)) - 1.0f;
-		clicked_pos.y = -1.0f * (2.0f * (clicked_pos.y / float(window_size.y)) - 1.0f);	// inverted
 		return true;
 	} else if (evt.type == SDL_MOUSEMOTION) {
 		// record current location, to hightlight option
-
 		mouse_pos = glm::vec2(evt.motion.x, evt.motion.y);
 		mouse_pos.x = 2.0f * (mouse_pos.x / float(window_size.x)) - 1.0f;
 		mouse_pos.y = -1.0f * (2.0f * (mouse_pos.y / float(window_size.y)) - 1.0f);
@@ -45,16 +39,35 @@ bool MenuMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void MenuMode::update(float elapsed) {
-	//TODO: delete later
-	//std::cout << "mouse_pose: " << glm::to_string(mouse_pos) << std::endl;
 
 	// update highlight
 	if(mouse_pos.x <= 0.0f){
 		if(mouse_pos.y >= -0.1f){
 			highlight_pos.y = -0.05f;
+			modeSelect = 'p';	// play mode
 		}else{
 			highlight_pos.y = -0.2f;
+			modeSelect = 'c';	// control prompt
 		}
+	}
+
+	if(clicked){
+		switch(modeSelect){
+			case 'p':
+				Mode::set_current(std::make_shared< PlayMode >());
+				break;
+
+			case 'c':
+				//TODO: show control prompt, or put stage switch here
+				std::cout << "not implemented" << std::endl;
+				break;
+
+			default:
+				break;
+		}
+
+		clicked = false;
+
 	}
 	
 
