@@ -3,6 +3,8 @@
 #include "load_save_png.hpp"
 
 #include "PlayMode.hpp"
+#include "MenuMode.hpp"
+
 
 #include "DrawLines.hpp"
 #include "Mesh.hpp"
@@ -299,9 +301,14 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			//}
 
 			fixed_head = false;
-
 			return true;
+		} else if (evt.type == SDL_KEYDOWN) {
+			if (evt.key.keysym.sym == SDLK_ESCAPE) {
+				Mode::set_current(std::make_shared< MenuMode >());
+				return true;
+			} 
 		}
+
 	} else if (evt.type == SDL_KEYUP) {
 		if (evt.key.keysym.sym == SDLK_a || evt.key.keysym.sym == SDLK_LEFT) {
 			left.pressed = false;

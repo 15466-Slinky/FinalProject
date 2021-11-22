@@ -1,6 +1,7 @@
 #include "MenuMode.hpp"
 #include "PlayMode.hpp"
 
+
 #include "DrawLines.hpp"
 #include "gl_errors.hpp"
 #include "data_path.hpp"
@@ -40,6 +41,8 @@ bool MenuMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 void MenuMode::update(float elapsed) {
 
+	//std::cout << "mouse_pos: " << glm::to_string(mouse_pos) << std::endl;
+
 	// update highlight
 	if(mouse_pos.x <= 0.0f){
 		if(mouse_pos.y >= -0.1f){
@@ -59,7 +62,7 @@ void MenuMode::update(float elapsed) {
 
 			case 'c':
 				//TODO: show control prompt, or put stage switch here
-				std::cout << "not implemented" << std::endl;
+				//std::cout << "not implemented" << std::endl;
 				break;
 
 			default:
