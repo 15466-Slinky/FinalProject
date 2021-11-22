@@ -155,9 +155,6 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 
 	player = Player(glm::vec2(cat_head->position), glm::vec2(cat_tail->position), glm::vec2(0.f), glm::vec2(0.f));
 
-	//TODO: reposition doughnut to test object interaction, need to remove later
-	//doughnut->position = cat_tail->position - glm::vec3(5.0f, 0.0f, 0.0f);
-
 	sort_checkpoints();
 	curr_checkpoint_id = -1; //we haven't reached any checkpoint yet
 	next_checkpoint = checkpoints[0];
