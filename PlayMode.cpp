@@ -386,7 +386,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	cat_tail->position.x = player.tail_pos.x;
 	cat_tail->position.y = player.tail_pos.y;
 	
-	dynamic_camera.draw(drawable_size);
+	dynamic_camera.set(drawable_size);
 
 	//set up light type and position for lit_color_texture_program:
 	// TODO: consider using the Light(s) in the scene to do this

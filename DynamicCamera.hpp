@@ -16,6 +16,6 @@ struct DynamicCamera {
 	float zoom_out_ratio;
 
 	void update(float elapsed, glm::vec2 target, bool extending, float zoom_out_ratio_);
-	void draw(glm::uvec2 const &drawable_size);
+	void set(glm::uvec2 const &drawable_size);
 
 };
