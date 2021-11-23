@@ -157,8 +157,6 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	if(player.tail == nullptr) throw std::runtime_error("Cat tail not found.");
 	if(doughnut == nullptr) throw std::runtime_error("Doughnut not found.");
 
-	player = Player(glm::vec2(cat_head->position), glm::vec2(cat_tail->position), glm::vec2(0.f), glm::vec2(0.f));
-
 	sort_checkpoints();
 	curr_checkpoint_id = -1; //we haven't reached any checkpoint yet
 	next_checkpoint = checkpoints[0];
@@ -669,8 +667,8 @@ void PlayMode::interact_objects(float elapsed) {
 
 				// increase player length
 				player.max_length += 5.f;
-				player_body.push_back(Spring_Point(player.head_pos, glm::vec2(0.f, 0.f)));
-				size_t num_springs = player_body.size();
+				player.body.push_back(Spring_Point(player.head_pos, glm::vec2(0.f, 0.f)));
+				size_t num_springs = player.body.size();
 				glm::vec2 disp = (player.head_pos - player.tail_pos) / (float)num_springs;
 				for (uint8_t j = 0; j < num_springs; ++j) {
 					Spring_Point p = player.body[j];
@@ -696,60 +694,4 @@ void PlayMode::animation_update(float elapsed) {
 
 	//update camera
 	dynamic_camera.update(elapsed, (player.head_pos + player.tail_pos) / 2.f, space.pressed && player.grabbing, glm::distance(player.head_pos, player.tail_pos) / player.length);
-}
-
-void PlayMode::player_phys_update(float elapsed) {
-	// Apply gravity
-	player.head_vel.y -= elapsed * GRAVITY;
-	player.tail_vel.y -= elapsed * GRAVITY;
-	for (auto body : player_body) {
-		body.vel -= elapsed * GRAVITY;
-	}
-
-	// Restrict stretching to only be allowed when we're grabbing a surface
-	bool stretch_pressed = false;
-	if(space.pressed) {
-		stretch_pressed = player.grabbing;
-	}
-
-	player.length = stretch_pressed ? player.max_length : 1.f;
-
-	float head_tail_dist = glm::distance(player.head_pos, player.tail_pos);
-
-	if (stretch_pressed) {
-		if(head_tail_dist > 4.f)
-			stretched = true;
-	}
-	// If not pressing stretch, grabbing onto something, and the player has just recompressed, 
-	// let go and apply the velocity to both halves
-	else if (player.grabbing && stretched && head_tail_dist <= 4.f) {
-		stretched = false;
-
-		player.grabbing = false;
-		player.head_grounded = false;
-		player.head_vel += player.tail_vel *0.5f;
-		player.tail_vel *= 0.5f;
-	}
-
-	player.bound_length = stretched || (stretch_pressed) ? player.max_length : 1.0f;
-
-	do_auto_grab();
-
-	player.movement(elapsed, left.pressed, right.pressed, up.pressed);
-
-	// Do phyics update
-	player.head_pos += player.head_vel * elapsed;
-	player.tail_pos += player.tail_vel * elapsed;
-
-	// Check collision with the walls and adjust the velocities accordingly
-	player.collide_segments(collision_manager, 1.f, true);
-	player.collide_segments(collision_manager, 1.f, false);
-
-	// Air resistance only FIXED UPDATE
-	timer += elapsed;
-	while (timer > fixed_time) {
-		player.head_vel *= 0.995f;
-		player.tail_vel *= 0.995f;
-		timer -= fixed_time;
-	}
 }

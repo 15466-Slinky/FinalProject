@@ -154,43 +154,39 @@ void Player::phys_update(float elapsed, const CollisionManager &cm, bool left, b
 	for (auto b : body) {
 		b.vel -= elapsed * GRAVITY;
 	}
-	
-	length = space ? max_length : 1.f;
+
+	// Restrict stretching to only be allowed when we're grabbing a surface
+	bool stretch_pressed = false;
+	if(space) {
+		stretch_pressed = grabbing;
+	}
+
+	length = stretch_pressed ? max_length : 1.f;
 
 	float head_tail_dist = glm::distance(head_pos, tail_pos);
 
-	if (space) {
+	if (stretch_pressed) {
 		if(head_tail_dist > 4.f)
 			stretched = true;
 	}
 	// If not pressing stretch, grabbing onto something, and the player has just recompressed, 
 	// let go and apply the velocity to both halves
-	else if (fixed_head && stretched && head_tail_dist <= 4.f) {
+	else if (grabbing && stretched && head_tail_dist <= 4.f) {
 		stretched = false;
 
-		fixed_head = false;
+		grabbing = false;
 		head_grounded = false;
 		head_vel += tail_vel *0.5f;
 		tail_vel *= 0.5f;
-
-		printf("Recompressed %f\n", head_vel.x);
 	}
+
+	bound_length = stretched || (stretch_pressed) ? max_length : 1.0f;
 
 	do_auto_grab(grab_points);
 
-	if (!fixed_head && !fixed_tail) {
-		free_movement(elapsed, left, right, up);
-	} else if (fixed_head && fixed_tail) {
-		head_vel.x = 0.f;
-		head_vel.y = 0.f;
-		tail_vel.x = 0.f;
-		tail_vel.y = 0.f;
-		//std::cout << "you have stuck both your head and tail and cannot move\n";
-	} else if (fixed_head) {
-		fixed_head_movement(elapsed, left, right, up);
-	}
+	movement(elapsed, left, right, up);
 
-	// Do physics update
+	// Do phyics update
 	head_pos += head_vel * elapsed;
 	tail_pos += tail_vel * elapsed;
 
