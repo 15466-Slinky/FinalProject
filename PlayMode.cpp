@@ -129,7 +129,7 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 		else if(drawable_name.find("Checkpoint") != std::string::npos){
 			checkpoints.emplace_back(drawable_name, glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
 			//checkpoints don't have to be at z-value 0.f for visual reasons
-			assert(checkpoint_find_sides(&(checkpoints.back())));
+			assert(checkpoints.back().find_sides(scene.drawables));
 		}
 		else if(drawable_name.find("Scratch") != std::string::npos && 
 				drawable_name.find("Post") != std::string::npos) {
@@ -469,7 +469,7 @@ void PlayMode::update_checkpoints() {
 
 void PlayMode::activate_checkpoint(int checkpoint_id, float elapsed) {
 	assert(0 <= checkpoint_id && checkpoint_id < checkpoints.size());
-	PlayMode::checkpoint c = checkpoints[checkpoint_id];
+	Check_Point c = checkpoints[checkpoint_id];
 	assert(c.box_has_sides());
 
 	float rot_speed = 0.1f;
@@ -497,21 +497,6 @@ void PlayMode::activate_checkpoint(int checkpoint_id, float elapsed) {
 		accumulated_time = 0.f;
 		activating_checkpoint = false;
 	}
-}
-
-bool PlayMode::checkpoint_find_sides(checkpoint* c) {
-	std::string prefix = c->name.substr(0, c->name.find(".Checkpoint"));
-
-	for (auto &drawable : scene.drawables) {
-		std::string drawable_name = drawable.transform->name;
-
-		if (drawable_name == prefix + ".Front") c->box_front = drawable.transform;
-		else if (drawable_name == prefix + ".Left") c->box_left = drawable.transform;
-		else if (drawable_name == prefix + ".Right") c->box_right = drawable.transform;
-
-		if (c->box_has_sides()) return true;
-	}
-	return false;
 }
 
 void PlayMode::spin_fish(float elapsed) {
