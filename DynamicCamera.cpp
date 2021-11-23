@@ -28,8 +28,8 @@ void DynamicCamera::update(float elapsed, glm::vec2 target, bool extending, floa
 	}
 }
 
-void DynamicCamera::draw(glm::uvec2 const &drawable_size) {
-	//draw scene and update camera
+void DynamicCamera::set(glm::uvec2 const &drawable_size) {
+	//set aspect ration and camera position
 	camera->transform->position = camera_pos;
 	camera->aspect = float(drawable_size.x) / float(drawable_size.y);
 }

@@ -3,6 +3,8 @@
 #include "load_save_png.hpp"
 
 #include "PlayMode.hpp"
+#include "MenuMode.hpp"
+
 
 #include "DrawLines.hpp"
 #include "Mesh.hpp"
@@ -12,7 +14,7 @@
 #include "hex_dump.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/string_cast.hpp>	//TODO: only for debug, can delete
 #include <glm/gtc/quaternion.hpp>
 
 #include <random>
@@ -93,7 +95,7 @@ GLuint PlayMode::load_texture(std::string filename) {
 
 //------------- Functions -----------------//
 PlayMode::PlayMode() : scene(*slinky_scene) {
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 
 	// get pointer to each shape
 	for (auto &drawable : scene.drawables) {
@@ -155,8 +157,7 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	if(player.tail == nullptr) throw std::runtime_error("Cat tail not found.");
 	if(doughnut == nullptr) throw std::runtime_error("Doughnut not found.");
 
-	//TODO: reposition doughnut to test object interaction, need to remove later
-	//doughnut->position = player.tail->position - glm::vec3(5.0f, 0.0f, 0.0f);
+	player = Player(glm::vec2(cat_head->position), glm::vec2(cat_tail->position), glm::vec2(0.f), glm::vec2(0.f));
 
 	sort_checkpoints();
 	curr_checkpoint_id = -1; //we haven't reached any checkpoint yet
@@ -298,13 +299,20 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_e) {
 			//if (player.grab_ledge(collision_manager, player.head_pos, 1.f + grab_radius)) {
-			//	player.fixed_head = !player.fixed_head;
+			//	player.grabbing = !player.grabbing;
 			//}
 
-			player.fixed_head = false;
-
+			player.grabbing = false;
 			return true;
+		} else if (evt.type == SDL_KEYDOWN) {
+			if (evt.key.keysym.sym == SDLK_ESCAPE) {
+				//TODO: need to move everything that holds playmode inplace
+				Sound::stop_all_samples();
+				Mode::set_current(std::make_shared< MenuMode >());
+				return true;
+			} 
 		}
+
 	} else if (evt.type == SDL_KEYUP) {
 		if (evt.key.keysym.sym == SDLK_a || evt.key.keysym.sym == SDLK_LEFT) {
 			left.pressed = false;
@@ -371,7 +379,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	player.tail->position.x = player.tail_pos.x;
 	player.tail->position.y = player.tail_pos.y;
 	
-	dynamic_camera.draw(drawable_size);
+	dynamic_camera.set(drawable_size);
 
 	//set up light type and position for lit_color_texture_program:
 	// TODO: consider using the Light(s) in the scene to do this
@@ -530,8 +538,8 @@ void PlayMode::celebrate_draw(glm::uvec2 const &drawable_size) {
 	for (PlayMode::firework f : fireworks) {
 		//https://stackoverflow.com/questions/9879258/how-can-i-generate-random-points-on-a-circles-circumference-in-javascript
 		for (size_t i=0;i<3;i++) {
-			float x = cos((static_cast<float>(rand()) / RAND_MAX) * M_PI * 2.f) + f.position.x;
-			float y = sin((static_cast<float>(rand()) / RAND_MAX) * M_PI * 2.f) + f.position.y;
+			float x = cosf((rand() / (float)RAND_MAX) * (float)M_PI * 2.f) + f.position.x;
+			float y = sinf((rand() / (float)RAND_MAX) * (float)M_PI * 2.f) + f.position.y;
 			vertices.emplace_back(glm::vec3(x, y, 0.f), f.color, glm::vec2(0.5f, 0.5f));
 		}
 	}
@@ -660,10 +668,9 @@ void PlayMode::interact_objects(float elapsed) {
 				i--;
 
 				// increase player length
-				player.max_length
-		 += 10.f;
-				player.body.push_back(Spring_Point(player.head_pos, glm::vec2(0.f, 0.f)));
-				size_t num_springs = player.body.size();
+				player.max_length += 5.f;
+				player_body.push_back(Spring_Point(player.head_pos, glm::vec2(0.f, 0.f)));
+				size_t num_springs = player_body.size();
 				glm::vec2 disp = (player.head_pos - player.tail_pos) / (float)num_springs;
 				for (uint8_t j = 0; j < num_springs; ++j) {
 					Spring_Point p = player.body[j];
@@ -688,5 +695,61 @@ void PlayMode::animation_update(float elapsed) {
 	update_body();
 
 	//update camera
-	dynamic_camera.update(elapsed, (player.head_pos + player.tail_pos) / 2.f, space.pressed, glm::distance(player.head_pos, player.tail_pos) / player.length);
+	dynamic_camera.update(elapsed, (player.head_pos + player.tail_pos) / 2.f, space.pressed && player.grabbing, glm::distance(player.head_pos, player.tail_pos) / player.length);
+}
+
+void PlayMode::player_phys_update(float elapsed) {
+	// Apply gravity
+	player.head_vel.y -= elapsed * GRAVITY;
+	player.tail_vel.y -= elapsed * GRAVITY;
+	for (auto body : player_body) {
+		body.vel -= elapsed * GRAVITY;
+	}
+
+	// Restrict stretching to only be allowed when we're grabbing a surface
+	bool stretch_pressed = false;
+	if(space.pressed) {
+		stretch_pressed = player.grabbing;
+	}
+
+	player.length = stretch_pressed ? player.max_length : 1.f;
+
+	float head_tail_dist = glm::distance(player.head_pos, player.tail_pos);
+
+	if (stretch_pressed) {
+		if(head_tail_dist > 4.f)
+			stretched = true;
+	}
+	// If not pressing stretch, grabbing onto something, and the player has just recompressed, 
+	// let go and apply the velocity to both halves
+	else if (player.grabbing && stretched && head_tail_dist <= 4.f) {
+		stretched = false;
+
+		player.grabbing = false;
+		player.head_grounded = false;
+		player.head_vel += player.tail_vel *0.5f;
+		player.tail_vel *= 0.5f;
+	}
+
+	player.bound_length = stretched || (stretch_pressed) ? player.max_length : 1.0f;
+
+	do_auto_grab();
+
+	player.movement(elapsed, left.pressed, right.pressed, up.pressed);
+
+	// Do phyics update
+	player.head_pos += player.head_vel * elapsed;
+	player.tail_pos += player.tail_vel * elapsed;
+
+	// Check collision with the walls and adjust the velocities accordingly
+	player.collide_segments(collision_manager, 1.f, true);
+	player.collide_segments(collision_manager, 1.f, false);
+
+	// Air resistance only FIXED UPDATE
+	timer += elapsed;
+	while (timer > fixed_time) {
+		player.head_vel *= 0.995f;
+		player.tail_vel *= 0.995f;
+		timer -= fixed_time;
+	}
 }
