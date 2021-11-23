@@ -640,11 +640,20 @@ void PlayMode::turn_cat() {
 	}
 	*/
 
+	// Quat lookat code, slightly adapted from this example
+	// https://stackoverflow.com/questions/18172388/glm-quaternion-lookat-function
 	glm::vec3 disp = cat_head->position - cat_tail->position;
+	glm::vec3 norm_disp = glm::normalize(disp);
 	glm::vec3 up(0.f, 1.f, 0.f);
 
-	cat_head->rotation = glm::quatLookAt(glm::normalize(disp), up) * glm::quat(up * (3.14159f / 2));
-	cat_tail->rotation = glm::quatLookAt(glm::normalize(disp), up) * glm::quat(up * (3.14159f / 2));
+	glm::quat body_rotation = glm::quatLookAt(norm_disp, up) * glm::quat(up * (3.14159f / 2));
+
+	// Is the normal up (nearly) parallel to direction?
+    if(glm::abs(glm::dot(norm_disp, up)) < .9999f)
+	if(glm::distance(disp, glm::vec3(0.f)) > .001f) {
+		cat_head->rotation = body_rotation;
+		cat_tail->rotation = body_rotation;
+	}
 }
 
 /* Dynamic player meshing (WIP) */
@@ -771,8 +780,6 @@ void PlayMode::player_phys_update(float elapsed) {
 		player.head_grounded = false;
 		player.head_vel += player.tail_vel *0.5f;
 		player.tail_vel *= 0.5f;
-
-		printf("Recompressed %f\n", player.head_vel.x);
 	}
 
 	player.bound_length = stretched || (stretch_pressed) ? player.max_length : 1.0f;
