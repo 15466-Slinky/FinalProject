@@ -63,13 +63,6 @@ struct PlayMode : Mode {
 	void animation_update(float elapsed);
 	void interact_objects(float elapsed);
 
-	//checkpoint behavior
-	void sort_checkpoints();
-	void update_checkpoints();
-	void activate_checkpoint(int checkpoint_id, float elapsed);
-	bool activating_checkpoint = false;
-	float accumulated_time = 0.f;
-
 	//fish behavior
 	void spin_fish(float elapsed);
 
@@ -97,9 +90,8 @@ struct PlayMode : Mode {
 	//checkpoints:
 	std::vector<Check_Point> checkpoints; //checkpoints should be sorted by x coordinate
 	int curr_checkpoint_id;
-	Check_Point curr_checkpoint;
-	Check_Point next_checkpoint;
 
+	//grab points
 	std::vector<Grab_Point> grab_points;
 
 	//input tracking:

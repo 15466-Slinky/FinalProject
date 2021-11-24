@@ -5,7 +5,6 @@
 #include "PlayMode.hpp"
 #include "MenuMode.hpp"
 
-
 #include "DrawLines.hpp"
 #include "Mesh.hpp"
 #include "Load.hpp"
@@ -129,7 +128,7 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 		else if(drawable_name.find("Checkpoint") != std::string::npos){
 			checkpoints.emplace_back(drawable_name, glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
 			//checkpoints don't have to be at z-value 0.f for visual reasons
-			assert(checkpoints.back().find_sides(scene.drawables));
+			assert(checkpoints.back().box_find_sides(scene.drawables));
 		}
 		else if(drawable_name.find("Scratch") != std::string::npos && 
 				drawable_name.find("Post") != std::string::npos) {
@@ -157,9 +156,8 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 
 	player = Player(glm::vec2(cat_head->position), glm::vec2(cat_tail->position), glm::vec2(0.f), glm::vec2(0.f));
 
-	sort_checkpoints();
+	sort_checkpoints(checkpoints);
 	curr_checkpoint_id = -1; //we haven't reached any checkpoint yet
-	next_checkpoint = checkpoints[0];
 
 	collision_manager = CollisionManager(platforms);
 
@@ -339,7 +337,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 void PlayMode::update(float elapsed) {
 	//check if the game has ended, aka if we have eaten the donut
 	if (game_over)
-    celebrate_update(elapsed);
+    	celebrate_update(elapsed);
 	if (glm::distance(player.head_pos, glm::vec2(doughnut->position)) < 1.f) {
 		game_over = true;
 	}
@@ -356,8 +354,7 @@ void PlayMode::update(float elapsed) {
 	interact_objects(elapsed);
 
 	//update checkpoint
-	update_checkpoints();
-	if (activating_checkpoint) activate_checkpoint(curr_checkpoint_id, elapsed);
+	update_checkpoints(checkpoints, curr_checkpoint_id, player, elapsed);
 
 	player_phys_update(elapsed);
 	animation_update(elapsed);
@@ -440,62 +437,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		draw_text(glm::vec2(-aspect + 0.5f, 0.0f), "GAME OVER: YOU WIN!", 0.4f);
 
 		celebrate_draw(drawable_size);
-	}
-}
-
-void PlayMode::sort_checkpoints() {
-	//sort checkpoints based on x position
-	std::sort(checkpoints.begin(), checkpoints.end());
-}
-
-void PlayMode::update_checkpoints() {
-	if (curr_checkpoint_id == checkpoints.size() - 1) { //we already passed the last checkpoint! is it game over?
-		return; //we can revisit this later if we want the last checkpoint to end the game
-	}
-	//if we are past the next checkpoint, then make it the new current checkpoint
-	if (glm::distance(player.head_pos, next_checkpoint.position) <= 3.f || glm::distance(player.tail_pos, next_checkpoint.position) <= 3.f) {
-		curr_checkpoint_id += 1;
-		curr_checkpoint = checkpoints[curr_checkpoint_id];
-		curr_checkpoint.reached = true;
-
-		if (curr_checkpoint_id != checkpoints.size() - 1)
-			next_checkpoint = checkpoints[curr_checkpoint_id + 1];
-
-		player.head_respawn_pos = curr_checkpoint.position;
-		player.tail_respawn_pos = player.head_respawn_pos - glm::vec2(1.f, 0.f);
-		activating_checkpoint = true;
-	}
-}
-
-void PlayMode::activate_checkpoint(int checkpoint_id, float elapsed) {
-	assert(0 <= checkpoint_id && checkpoint_id < checkpoints.size());
-	Check_Point c = checkpoints[checkpoint_id];
-	assert(c.box_has_sides());
-
-	float rot_speed = 0.1f;
-	{ //make the front of the box fall down
-		glm::vec3 euler_rot = glm::vec3(elapsed * rot_speed, 0.f, 0.f);
-		c.box_front->rotation *= glm::quat(euler_rot);
-		c.box_front->position.y -= 1.f * elapsed;
-		c.box_front->position.z += 1.f * elapsed;
-	}
-	{ //make the left side of the box fall down
-		glm::vec3 euler_rot = glm::vec3(0.f, 0.f, elapsed * rot_speed);
-		c.box_left->rotation *= glm::quat(euler_rot);
-		c.box_left->position.x -= 1.f * elapsed;
-		c.box_left->position.y -= 1.f * elapsed;
-	}
-	{ //make the right side of the box fall down
-		glm::vec3 euler_rot = glm::vec3(0.f, 0.f, -elapsed * rot_speed);
-		c.box_right->rotation *= glm::quat(euler_rot);
-		c.box_right->position.x += 1.f * elapsed;
-		c.box_left->position.y -= 1.f * elapsed;
-	}
-	accumulated_time += elapsed;
-
-	if (accumulated_time >= 1.f) {
-		accumulated_time = 0.f;
-		activating_checkpoint = false;
 	}
 }
 

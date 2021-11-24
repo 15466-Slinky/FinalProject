@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 #include "Scene.hpp"
+#include "Player.hpp"
 
 #include <vector>
 #include <list>
@@ -28,35 +29,26 @@ struct Check_Point {
 	bool reached;
 	glm::vec2 position;
 
+	bool activating;
+	float time;
+
 	Scene::Transform* box_front;
 	Scene::Transform* box_left;
 	Scene::Transform* box_right;
 
 	Check_Point() = default;
 	Check_Point(std::string name_, glm::vec2 position_) 
-		: name{name_}, reached{false}, position{position_},
+		: name{name_}, reached{false}, position{position_}, activating{false}, time{0.f},
 		box_front{nullptr}, box_left{nullptr}, box_right{nullptr} {}
 
-	bool box_has_sides() {
-		return (box_left != nullptr && box_right != nullptr && box_front != nullptr);
-	}
-
-	bool find_sides(std::list<Scene::Drawable> drawables) {
-		std::string prefix = name.substr(0, name.find(".Checkpoint"));
-
-		for (auto &drawable : drawables) {
-			std::string drawable_name = drawable.transform->name;
-
-			if (drawable_name == prefix + ".Front") box_front = drawable.transform;
-			else if (drawable_name == prefix + ".Left") box_left = drawable.transform;
-			else if (drawable_name == prefix + ".Right") box_right = drawable.transform;
-
-			if (box_has_sides()) return true;
-		}
-		return false;
-	}
+	bool box_has_sides();
+	bool box_find_sides(std::list<Scene::Drawable> &drawables);
+	void activate(float elapsed);
 
 	bool operator < (const Check_Point& c) const {
 		return position.x < c.position.x;
 	}
 };
+
+void sort_checkpoints(std::vector<Check_Point> &checkpoints);
+void update_checkpoints(std::vector<Check_Point> &checkpoints, int &curr_checkpoint_id, Player &player, float elapsed);
