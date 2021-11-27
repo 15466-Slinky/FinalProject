@@ -9,6 +9,7 @@
 #include "DynamicCamera.hpp"
 #include "Player.hpp"
 #include "KeyPoint.hpp"
+#include "load_texture.hpp"
 
 #include <glm/glm.hpp>
 
@@ -58,7 +59,6 @@ struct PlayMode : Mode {
 
 	//----- helper functions ----- see Trello documentation for details
 
-	GLuint load_texture(std::string filename);
 	void player_phys_update(float elapsed);
 	void animation_update(float elapsed);
 	void interact_objects(float elapsed);

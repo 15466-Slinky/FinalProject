@@ -166,6 +166,7 @@ COMMON_NAMES =
 	hex_dump
 	Collisions
 	DynamicCamera
+	load_texture
 	;
 
 SHOW_MESHES_NAMES =
