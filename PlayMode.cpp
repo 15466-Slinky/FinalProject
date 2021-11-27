@@ -314,7 +314,7 @@ void PlayMode::update(float elapsed) {
 	//check if the game has ended, aka if we have eaten the donut
 	if (game_over)
     	celebrate_update(elapsed);
-	if (glm::distance(player.head_pos, glm::vec2(doughnut->position)) < 1.f) {
+	if (glm::distance(player.head_pos, glm::vec2(doughnut->position)) < 5.f) {
 		game_over = true;
 	}
 
