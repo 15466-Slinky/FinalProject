@@ -9,6 +9,7 @@
 #include "DynamicCamera.hpp"
 #include "Player.hpp"
 #include "KeyPoint.hpp"
+#include "load_texture.hpp"
 
 #include <glm/glm.hpp>
 
@@ -58,7 +59,6 @@ struct PlayMode : Mode {
 
 	//----- helper functions ----- see Trello documentation for details
 
-	GLuint load_texture(std::string filename);
 	void player_phys_update(float elapsed);
 	void animation_update(float elapsed);
 	void interact_objects(float elapsed);
@@ -74,7 +74,7 @@ struct PlayMode : Mode {
 	void do_auto_grab();
 	void turn_cat();
 	void update_body();
-	void animate_feet();
+	void animate_feet(float elapsed);
 	float timer = 0.0f;
 	float fixed_time = 0.015f;
 
@@ -89,7 +89,7 @@ struct PlayMode : Mode {
 
 	//checkpoints:
 	std::vector<Check_Point> checkpoints; //checkpoints should be sorted by x coordinate
-	int curr_checkpoint_id;
+	long unsigned int curr_checkpoint_id;
 
 	//grab points
 	std::vector<Grab_Point> grab_points;
@@ -106,8 +106,6 @@ struct PlayMode : Mode {
 	// Player motion
 	uint8_t direction = 0; //facing right
 	uint8_t tail_direction = 0;
-
-	std::vector<Spring_Point> player_body;
 
 	// Indicates if the player has extended the player size, and the player hasn't yet compressed back to actual size
 	bool stretched = false;

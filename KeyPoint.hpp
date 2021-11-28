@@ -17,13 +17,6 @@ struct Grab_Point {
 	}
 };
 
-struct Spring_Point {
-	glm::vec2 pos;
-	glm::vec2 vel;
-
-	Spring_Point(glm::vec2 pos_, glm::vec2 vel_): pos{pos_}, vel{vel_} {}
-};
-
 struct Check_Point {
 	std::string name;
 	bool reached;
@@ -51,4 +44,4 @@ struct Check_Point {
 };
 
 void sort_checkpoints(std::vector<Check_Point> &checkpoints);
-void update_checkpoints(std::vector<Check_Point> &checkpoints, int &curr_checkpoint_id, Player &player, float elapsed);
+void update_checkpoints(std::vector<Check_Point> &checkpoints, long unsigned int &curr_checkpoint_id, Player &player, float elapsed);

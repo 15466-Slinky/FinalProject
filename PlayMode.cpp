@@ -1,4 +1,4 @@
-#include "LitColorTextureProgram.hpp"
+	#include "LitColorTextureProgram.hpp"
 #include "ColorTextureProgram.hpp"
 #include "load_save_png.hpp"
 
@@ -67,30 +67,6 @@ Load< Sound::Sample > cat_scream_sample(LoadTagDefault, []() -> Sound::Sample co
 Load< Sound::Sample > nt_effect_sample(LoadTagDefault, []() -> Sound::Sample const * {
 	return new Sound::Sample(data_path("gundam-newtype-flash-sound-effect.opus"));
 });
-
-
-/* Loads a texture as a PNG, then pushes it onto the GPU */
-GLuint PlayMode::load_texture(std::string filename) {
-	glm::uvec2 size;
-	std::vector< glm::u8vec4 > tex_data;
-
-	load_png(filename, &size, &tex_data, UpperLeftOrigin);
-
-	//make a 1-pixel white texture to bind by default:
-	GLuint tex;
-	glGenTextures(1, &tex);
-
-	glBindTexture(GL_TEXTURE_2D, tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data.data());
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glGenerateMipmap(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	return tex;
-}
 
 //------------- Functions -----------------//
 PlayMode::PlayMode() : scene(*slinky_scene) {
@@ -338,7 +314,7 @@ void PlayMode::update(float elapsed) {
 	//check if the game has ended, aka if we have eaten the donut
 	if (game_over)
     	celebrate_update(elapsed);
-	if (glm::distance(player.head_pos, glm::vec2(doughnut->position)) < 1.f) {
+	if (glm::distance(player.head_pos, glm::vec2(doughnut->position)) < 5.f) {
 		game_over = true;
 	}
 
@@ -646,14 +622,6 @@ void PlayMode::interact_objects(float elapsed) {
 
 				// increase player length
 				player.max_length += 5.f;
-				player_body.push_back(Spring_Point(player.head_pos, glm::vec2(0.f, 0.f)));
-				size_t num_springs = player_body.size();
-				glm::vec2 disp = (player.head_pos - player.tail_pos) / (float)num_springs;
-				for (uint8_t j = 0; j < num_springs; ++j) {
-					Spring_Point p = player_body[j];
-					p.pos = player.tail_pos + glm::vec2(disp.x * j, disp.y * j); //distribute evenly
-					p.vel = glm::vec2(0.f, 0.f); //reset velocity to avoid potential issues
-				}
 
 				// reset counter
 				eat_counter = 0.0f;
@@ -671,17 +639,21 @@ void PlayMode::animation_update(float elapsed) {
 	turn_cat();
 	update_body();
 
+	//peets
+	animate_feet(elapsed);
+
 	//update camera
 	dynamic_camera.update(elapsed, (player.head_pos + player.tail_pos) / 2.f, space.pressed && player.grabbing, glm::distance(player.head_pos, player.tail_pos) / player.length);
+}
+
+void PlayMode::animate_feet(float elapsed) {
+
 }
 
 void PlayMode::player_phys_update(float elapsed) {
 	// Apply gravity
 	player.head_vel.y -= elapsed * GRAVITY;
 	player.tail_vel.y -= elapsed * GRAVITY;
-	for (auto body : player_body) {
-		body.vel -= elapsed * GRAVITY;
-	}
 
 	// Restrict stretching to only be allowed when we're grabbing a surface
 	bool stretch_pressed = false;
