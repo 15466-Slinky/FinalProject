@@ -654,37 +654,46 @@ void PlayMode::animation_update(float elapsed) {
 	turn_cat();
 
 	//peets
-	//animate_feet(elapsed);
+	animate_feet(elapsed);
 
 	//update camera
 	dynamic_camera.update(elapsed, (player.head_pos + player.tail_pos) / 2.f, space.pressed && player.grabbing, glm::distance(player.head_pos, player.tail_pos) / player.length);
 }
 
+//mostly taken from anne and georges game2
 void PlayMode::animate_feet(float elapsed) {
 	//slowly rotates through [0,1):
-	wobble += elapsed / 10.0f;
-	wobble -= std::floor(wobble);
+	//wobble += elapsed / 10.0f;
+	//wobble -= std::floor(wobble);
 
-	lfpeet->position = lfpeet_base + glm::vec3(
-		0.0f * std::sin(wobble * 20.0f * 2.0f * float(M_PI)),
-		0.0f,
-		-0.5f * std::sin(wobble * 20.0f * 2.0f * float(M_PI))
-	);
-	rfpeet->position = rfpeet_base + glm::vec3(
-		0.0f * std::sin(wobble * 20.0f * 2.0f * float(M_PI)),
-		0.0f,
-		0.5f * std::sin(wobble * 20.0f * 2.0f * float(M_PI))
-	);
-	lbpeet->position = lbpeet_base + glm::vec3(
-		0.0f * std::sin(wobble * 20.0f * 2.0f * float(M_PI)),
-		0.0f,
-		-0.5f * std::sin(wobble * 20.0f * 2.0f * float(M_PI))
-	);
-	rbpeet->position = rbpeet_base + glm::vec3(
-		0.0f * std::sin(wobble * 20.0f * 2.0f * float(M_PI)),
-		0.0f,
-		0.5f * std::sin(wobble * 20.0f * 2.0f * float(M_PI))
-	);
+	if (glm::length(player.tail_vel) > 0.1f) {
+		wobblefront += elapsed * glm::length(player.tail_vel) / 100.0f;
+		wobblefront -= std::floor(wobblefront);
+		lbpeet->position = lbpeet_base + glm::vec3(
+			-0.15f * std::sin((wobblefront + 5.0f) * 10.0f * 2.0f * float(M_PI)),
+			-0.15f * std::sin((wobblefront + 5.0f) * 10.0f * 2.0f * float(M_PI)),
+			0.0f
+		);
+		rbpeet->position = rbpeet_base + glm::vec3(
+			0.15f * std::sin(wobblefront * 10.0f * 2.0f * float(M_PI)),
+			-0.15f * std::sin(wobblefront * 10.0f * 2.0f * float(M_PI)),
+			0.0f
+		);
+	}
+	if (glm::length(player.head_vel) > 0.1f) {
+		wobbleback += elapsed * glm::length(player.head_vel) / 100.0f;
+		wobbleback -= std::floor(wobbleback);
+		lfpeet->position = lfpeet_base + glm::vec3(
+			-0.15f * std::sin(wobbleback * 10.0f * 2.0f * float(M_PI)),
+			0.0f,//0.15f * std::sin(wobble * 10.0f * 2.0f * float(M_PI)),
+			0.0f
+		);
+		rfpeet->position = rfpeet_base + glm::vec3(
+			0.15f * std::sin(wobbleback * 10.0f * 2.0f * float(M_PI)),
+			0.0f, //0.15f * std::sin(wobble * 10.0f * 2.0f * float(M_PI)),
+			0.0f
+		);
+	}
 }
 
 void PlayMode::player_phys_update(float elapsed) {
