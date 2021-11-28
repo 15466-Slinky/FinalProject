@@ -573,13 +573,13 @@ void PlayMode::update_body() {
 
 	
 	//upload vertices to vertex_buffer:
-	glBindBuffer(GL_ARRAY_BUFFER, cat_body->pipeline.vao); //set vertex_buffer as current
+	//glBindBuffer(GL_ARRAY_BUFFER, cat_body->pipeline.vao); //set vertex_buffer as current
 	////upload vertices array
 	//glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices[0]), vertices.data(), GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	//cat_body->pipeline.count = 3;
-	cat_body->pipeline.count = 0;
+	//cat_body->pipeline.count = 0;
 }
 
 void PlayMode::interact_objects(float elapsed) {
