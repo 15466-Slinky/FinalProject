@@ -149,7 +149,8 @@ struct PlayMode : Mode {
 	glm::vec3 lbpeet_base;
 	glm::vec3 rbpeet_base;
 	glm::vec3 rfpeet_base;
-	float wobble = 0.0f;
+	float wobblefront = 0.0f;
+	float wobbleback = 0.0f;
 
 	//sound
 	std::shared_ptr< Sound::PlayingSample > bgm_loop;
