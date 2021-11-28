@@ -4,6 +4,7 @@
 #include <glm/gtx/string_cast.hpp>	//TODO: only for debug, can delete
 
 #include <iostream>
+#include <algorithm>
 
 bool Check_Point::box_has_sides() {
 	return (box_left != nullptr && box_right != nullptr && box_front != nullptr);
