@@ -680,6 +680,22 @@ void PlayMode::update_body() {
 	cat_body->pipeline.count = 0;
 }
 
+void what() {
+	Scene::Transform temp_transform = new Scene::Transform;
+	temp_transform->position = something;
+	temp_transform->rotation = something;
+	temp_transform->scale = something;
+	temp_transform->name = "Cat Body Copy";
+	player_body_transforms.push_back(temp_transform);
+	Scene::Drawable drawable(temp_transform);
+	drawable.pipeline = lit_color_texture_program_pipeline;
+	drawable.pipeline.vao = slinky_meshes_for_lit_color_texture_program;
+	drawable.pipeline.type = cat_body.pipeline.type;
+	drawable.pipeline.start = cat_body.pipeline.start;
+	drawable.pipeline.count = cat_body.pipeline.count;
+	PlayMode::scene.drawables.push_back(drawable);
+}
+
 void PlayMode::interact_objects(float elapsed) {
 	// interaction with in-game objects
 	for (uint8_t i = 0; i < fishes.size(); ++i) {

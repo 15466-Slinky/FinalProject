@@ -153,6 +153,7 @@ struct PlayMode : Mode {
 	uint8_t tail_direction = 0;
 
 	std::vector<Spring_Point> player_body;
+	std::vector<Scene::Transform> player_body_transforms;
 
 	// Indicates if the player has extended the player size, and the player hasn't yet compressed back to actual size
 	bool stretched = false;
