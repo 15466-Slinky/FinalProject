@@ -89,7 +89,7 @@ struct PlayMode : Mode {
 
 	//checkpoints:
 	std::vector<Check_Point> checkpoints; //checkpoints should be sorted by x coordinate
-	int curr_checkpoint_id;
+	long unsigned int curr_checkpoint_id;
 
 	//grab points
 	std::vector<Grab_Point> grab_points;

@@ -44,4 +44,4 @@ struct Check_Point {
 };
 
 void sort_checkpoints(std::vector<Check_Point> &checkpoints);
-void update_checkpoints(std::vector<Check_Point> &checkpoints, int &curr_checkpoint_id, Player &player, float elapsed);
+void update_checkpoints(std::vector<Check_Point> &checkpoints, long unsigned int &curr_checkpoint_id, Player &player, float elapsed);

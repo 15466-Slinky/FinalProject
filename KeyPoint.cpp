@@ -60,7 +60,7 @@ void sort_checkpoints(std::vector<Check_Point> &checkpoints) {
 	std::sort(checkpoints.begin(), checkpoints.end());
 }
 
-void update_checkpoints(std::vector<Check_Point> &checkpoints, int &curr_checkpoint_id, Player &player, float elapsed) {
+void update_checkpoints(std::vector<Check_Point> &checkpoints, long unsigned int &curr_checkpoint_id, Player &player, float elapsed) {
 	//update animation for any checkpoints which are opening
 	for (size_t i=0;i<checkpoints.size();i++) {
 		Check_Point &c = checkpoints[i];
