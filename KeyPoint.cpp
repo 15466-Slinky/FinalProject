@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include <iostream>
+#include <algorithm>
 
 bool Check_Point::box_has_sides() {
 	return (box_left != nullptr && box_right != nullptr && box_front != nullptr);
