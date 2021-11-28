@@ -17,13 +17,6 @@ struct Grab_Point {
 	}
 };
 
-struct Spring_Point {
-	glm::vec2 pos;
-	glm::vec2 vel;
-
-	Spring_Point(glm::vec2 pos_, glm::vec2 vel_): pos{pos_}, vel{vel_} {}
-};
-
 struct Check_Point {
 	std::string name;
 	bool reached;

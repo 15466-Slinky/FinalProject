@@ -1,4 +1,4 @@
-#include "LitColorTextureProgram.hpp"
+	#include "LitColorTextureProgram.hpp"
 #include "ColorTextureProgram.hpp"
 #include "load_save_png.hpp"
 
@@ -582,22 +582,6 @@ void PlayMode::update_body() {
 	cat_body->pipeline.count = 0;
 }
 
-void what() {
-	Scene::Transform temp_transform = new Scene::Transform;
-	temp_transform->position = something;
-	temp_transform->rotation = something;
-	temp_transform->scale = something;
-	temp_transform->name = "Cat Body Copy";
-	player_body_transforms.push_back(temp_transform);
-	Scene::Drawable drawable(temp_transform);
-	drawable.pipeline = lit_color_texture_program_pipeline;
-	drawable.pipeline.vao = slinky_meshes_for_lit_color_texture_program;
-	drawable.pipeline.type = cat_body.pipeline.type;
-	drawable.pipeline.start = cat_body.pipeline.start;
-	drawable.pipeline.count = cat_body.pipeline.count;
-	PlayMode::scene.drawables.push_back(drawable);
-}
-
 void PlayMode::interact_objects(float elapsed) {
 	// interaction with in-game objects
 	for (uint8_t i = 0; i < fishes.size(); ++i) {
@@ -638,14 +622,6 @@ void PlayMode::interact_objects(float elapsed) {
 
 				// increase player length
 				player.max_length += 5.f;
-				player_body.push_back(Spring_Point(player.head_pos, glm::vec2(0.f, 0.f)));
-				size_t num_springs = player_body.size();
-				glm::vec2 disp = (player.head_pos - player.tail_pos) / (float)num_springs;
-				for (uint8_t j = 0; j < num_springs; ++j) {
-					Spring_Point p = player_body[j];
-					p.pos = player.tail_pos + glm::vec2(disp.x * j, disp.y * j); //distribute evenly
-					p.vel = glm::vec2(0.f, 0.f); //reset velocity to avoid potential issues
-				}
 
 				// reset counter
 				eat_counter = 0.0f;
@@ -663,17 +639,21 @@ void PlayMode::animation_update(float elapsed) {
 	turn_cat();
 	update_body();
 
+	//peets
+	animate_feet(elapsed);
+
 	//update camera
 	dynamic_camera.update(elapsed, (player.head_pos + player.tail_pos) / 2.f, space.pressed && player.grabbing, glm::distance(player.head_pos, player.tail_pos) / player.length);
+}
+
+void PlayMode::animate_feet(float elapsed) {
+
 }
 
 void PlayMode::player_phys_update(float elapsed) {
 	// Apply gravity
 	player.head_vel.y -= elapsed * GRAVITY;
 	player.tail_vel.y -= elapsed * GRAVITY;
-	for (auto body : player_body) {
-		body.vel -= elapsed * GRAVITY;
-	}
 
 	// Restrict stretching to only be allowed when we're grabbing a surface
 	bool stretch_pressed = false;

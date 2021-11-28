@@ -74,7 +74,7 @@ struct PlayMode : Mode {
 	void do_auto_grab();
 	void turn_cat();
 	void update_body();
-	void animate_feet();
+	void animate_feet(float elapsed);
 	float timer = 0.0f;
 	float fixed_time = 0.015f;
 
@@ -106,9 +106,6 @@ struct PlayMode : Mode {
 	// Player motion
 	uint8_t direction = 0; //facing right
 	uint8_t tail_direction = 0;
-
-	std::vector<Spring_Point> player_body;
-	std::vector<Scene::Transform> player_body_transforms;
 
 	// Indicates if the player has extended the player size, and the player hasn't yet compressed back to actual size
 	bool stretched = false;
