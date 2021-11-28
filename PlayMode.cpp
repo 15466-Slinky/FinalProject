@@ -5,7 +5,6 @@
 #include "PlayMode.hpp"
 #include "MenuMode.hpp"
 
-
 #include "DrawLines.hpp"
 #include "Mesh.hpp"
 #include "Load.hpp"
@@ -69,30 +68,6 @@ Load< Sound::Sample > nt_effect_sample(LoadTagDefault, []() -> Sound::Sample con
 	return new Sound::Sample(data_path("gundam-newtype-flash-sound-effect.opus"));
 });
 
-
-/* Loads a texture as a PNG, then pushes it onto the GPU */
-GLuint PlayMode::load_texture(std::string filename) {
-	glm::uvec2 size;
-	std::vector< glm::u8vec4 > tex_data;
-
-	load_png(filename, &size, &tex_data, UpperLeftOrigin);
-
-	//make a 1-pixel white texture to bind by default:
-	GLuint tex;
-	glGenTextures(1, &tex);
-
-	glBindTexture(GL_TEXTURE_2D, tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data.data());
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glGenerateMipmap(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	return tex;
-}
-
 //------------- Functions -----------------//
 PlayMode::PlayMode() : scene(*slinky_scene) {
 	srand((unsigned int)time(NULL));
@@ -129,7 +104,7 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 		else if(drawable_name.find("Checkpoint") != std::string::npos){
 			checkpoints.emplace_back(drawable_name, glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
 			//checkpoints don't have to be at z-value 0.f for visual reasons
-			assert(checkpoint_find_sides(&(checkpoints.back())));
+			assert(checkpoints.back().box_find_sides(scene.drawables));
 		}
 		else if(drawable_name.find("Scratch") != std::string::npos && 
 				drawable_name.find("Post") != std::string::npos) {
@@ -157,9 +132,8 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 
 	player = Player(glm::vec2(cat_head->position), glm::vec2(cat_tail->position), glm::vec2(0.f), glm::vec2(0.f));
 
-	sort_checkpoints();
+	sort_checkpoints(checkpoints);
 	curr_checkpoint_id = -1; //we haven't reached any checkpoint yet
-	next_checkpoint = checkpoints[0];
 
 	collision_manager = CollisionManager(platforms);
 
@@ -339,8 +313,8 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 void PlayMode::update(float elapsed) {
 	//check if the game has ended, aka if we have eaten the donut
 	if (game_over)
-    celebrate_update(elapsed);
-	if (glm::distance(player.head_pos, glm::vec2(doughnut->position)) < 1.f) {
+    	celebrate_update(elapsed);
+	if (glm::distance(player.head_pos, glm::vec2(doughnut->position)) < 5.f) {
 		game_over = true;
 	}
 
@@ -356,8 +330,7 @@ void PlayMode::update(float elapsed) {
 	interact_objects(elapsed);
 
 	//update checkpoint
-	update_checkpoints();
-	if (activating_checkpoint) activate_checkpoint(curr_checkpoint_id, elapsed);
+	update_checkpoints(checkpoints, curr_checkpoint_id, player, elapsed);
 
 	player_phys_update(elapsed);
 	animation_update(elapsed);
@@ -441,77 +414,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 		celebrate_draw(drawable_size);
 	}
-}
-
-void PlayMode::sort_checkpoints() {
-	//sort checkpoints based on x position
-	std::sort(checkpoints.begin(), checkpoints.end());
-}
-
-void PlayMode::update_checkpoints() {
-	if (curr_checkpoint_id == checkpoints.size() - 1) { //we already passed the last checkpoint! is it game over?
-		return; //we can revisit this later if we want the last checkpoint to end the game
-	}
-	//if we are past the next checkpoint, then make it the new current checkpoint
-	if (glm::distance(player.head_pos, next_checkpoint.position) <= 3.f || glm::distance(player.tail_pos, next_checkpoint.position) <= 3.f) {
-		curr_checkpoint_id += 1;
-		curr_checkpoint = checkpoints[curr_checkpoint_id];
-		curr_checkpoint.reached = true;
-
-		if (curr_checkpoint_id != checkpoints.size() - 1)
-			next_checkpoint = checkpoints[curr_checkpoint_id + 1];
-
-		player.head_respawn_pos = curr_checkpoint.position;
-		player.tail_respawn_pos = player.head_respawn_pos - glm::vec2(1.f, 0.f);
-		activating_checkpoint = true;
-	}
-}
-
-void PlayMode::activate_checkpoint(int checkpoint_id, float elapsed) {
-	assert(0 <= checkpoint_id && checkpoint_id < checkpoints.size());
-	PlayMode::checkpoint c = checkpoints[checkpoint_id];
-	assert(c.box_has_sides());
-
-	float rot_speed = 0.1f;
-	{ //make the front of the box fall down
-		glm::vec3 euler_rot = glm::vec3(elapsed * rot_speed, 0.f, 0.f);
-		c.box_front->rotation *= glm::quat(euler_rot);
-		c.box_front->position.y -= 1.f * elapsed;
-		c.box_front->position.z += 1.f * elapsed;
-	}
-	{ //make the left side of the box fall down
-		glm::vec3 euler_rot = glm::vec3(0.f, 0.f, elapsed * rot_speed);
-		c.box_left->rotation *= glm::quat(euler_rot);
-		c.box_left->position.x -= 1.f * elapsed;
-		c.box_left->position.y -= 1.f * elapsed;
-	}
-	{ //make the right side of the box fall down
-		glm::vec3 euler_rot = glm::vec3(0.f, 0.f, -elapsed * rot_speed);
-		c.box_right->rotation *= glm::quat(euler_rot);
-		c.box_right->position.x += 1.f * elapsed;
-		c.box_left->position.y -= 1.f * elapsed;
-	}
-	accumulated_time += elapsed;
-
-	if (accumulated_time >= 1.f) {
-		accumulated_time = 0.f;
-		activating_checkpoint = false;
-	}
-}
-
-bool PlayMode::checkpoint_find_sides(checkpoint* c) {
-	std::string prefix = c->name.substr(0, c->name.find(".Checkpoint"));
-
-	for (auto &drawable : scene.drawables) {
-		std::string drawable_name = drawable.transform->name;
-
-		if (drawable_name == prefix + ".Front") c->box_front = drawable.transform;
-		else if (drawable_name == prefix + ".Left") c->box_left = drawable.transform;
-		else if (drawable_name == prefix + ".Right") c->box_right = drawable.transform;
-
-		if (c->box_has_sides()) return true;
-	}
-	return false;
 }
 
 void PlayMode::spin_fish(float elapsed) {

@@ -8,6 +8,8 @@
 #include "Collisions.hpp"
 #include "DynamicCamera.hpp"
 #include "Player.hpp"
+#include "KeyPoint.hpp"
+#include "load_texture.hpp"
 
 #include <glm/glm.hpp>
 
@@ -28,27 +30,6 @@ struct PlayMode : Mode {
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
 	//----- helper structs -----
-	struct checkpoint {
-		std::string name;
-		bool reached;
-		glm::vec2 position;
-
-		Scene::Transform* box_front;
-		Scene::Transform* box_left;
-		Scene::Transform* box_right;
-
-		checkpoint() : name{"Unnamed"}, reached{false}, position{glm::vec2(0.f)},
-			box_front{nullptr}, box_left{nullptr}, box_right{nullptr} {}
-		checkpoint(std::string name_, glm::vec2 position_) : name{name_}, reached{false}, position{position_},
-			box_front{nullptr}, box_left{nullptr}, box_right{nullptr} {}
-
-		bool box_has_sides() {
-			return (box_left != nullptr && box_right != nullptr && box_front != nullptr);
-		}
-		bool operator < (const checkpoint& c) const {
-			return position.x < c.position.x;
-		}
-	};
 	struct firework {
 		float age;
 		float speed;
@@ -76,36 +57,11 @@ struct PlayMode : Mode {
 		}
 	};
 
-	struct Grab_Point {
-		glm::vec2 position;
-		float past_player_dist;
-		
-		Grab_Point(glm::vec2 position_) : position{position_} {
-			past_player_dist = 0;
-		}
-	};
-
-	struct Spring_Point {
-		glm::vec2 pos;
-		glm::vec2 vel;
-
-		Spring_Point(glm::vec2 pos_, glm::vec2 vel_): pos{pos_}, vel{vel_} {}
-	};
-
 	//----- helper functions ----- see Trello documentation for details
 
-	GLuint load_texture(std::string filename);
 	void player_phys_update(float elapsed);
 	void animation_update(float elapsed);
 	void interact_objects(float elapsed);
-
-	//checkpoint behavior
-	void sort_checkpoints();
-	void update_checkpoints();
-	void activate_checkpoint(int checkpoint_id, float elapsed);
-	bool checkpoint_find_sides(checkpoint* c);
-	bool activating_checkpoint = false;
-	float accumulated_time = 0.f;
 
 	//fish behavior
 	void spin_fish(float elapsed);
@@ -132,11 +88,10 @@ struct PlayMode : Mode {
 	DynamicCamera dynamic_camera;
 
 	//checkpoints:
-	std::vector<checkpoint> checkpoints; //checkpoints should be sorted by x coordinate
+	std::vector<Check_Point> checkpoints; //checkpoints should be sorted by x coordinate
 	int curr_checkpoint_id;
-	checkpoint curr_checkpoint;
-	checkpoint next_checkpoint;
 
+	//grab points
 	std::vector<Grab_Point> grab_points;
 
 	//input tracking:
