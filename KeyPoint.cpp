@@ -30,24 +30,18 @@ void Check_Point::activate(float elapsed) {
 	assert(activating);
 	assert(box_has_sides());
 
-	float rot_speed = 0.1f;
+	float rot_speed = 3.14159f / 2;
 	{ //make the front of the box fall down
-		glm::vec3 euler_rot = glm::vec3(elapsed * rot_speed, 0.f, 0.f);
-		box_front->rotation *= glm::quat(euler_rot);
-		box_front->position.y -= 1.f * elapsed;
-		box_front->position.z += 1.f * elapsed;
+		glm::vec3 euler_rot = glm::vec3(time * rot_speed, 0.f, 0.f);
+		box_front->rotation = glm::quat(euler_rot);
 	}
 	{ //make the left side of the box fall down
-		glm::vec3 euler_rot = glm::vec3(0.f, 0.f, elapsed * rot_speed);
-		box_left->rotation *= glm::quat(euler_rot);
-		box_left->position.x -= 1.f * elapsed;
-		box_left->position.y -= 1.f * elapsed;
+		glm::vec3 euler_rot = glm::vec3(0.f, 0.f, time * rot_speed);
+		box_left->rotation = glm::quat(euler_rot);
 	}
 	{ //make the right side of the box fall down
-		glm::vec3 euler_rot = glm::vec3(0.f, 0.f, -elapsed * rot_speed);
-		box_right->rotation *= glm::quat(euler_rot);
-		box_right->position.x += 1.f * elapsed;
-		box_left->position.y -= 1.f * elapsed;
+		glm::vec3 euler_rot = glm::vec3(0.f, 0.f, -time * rot_speed);
+		box_right->rotation = glm::quat(euler_rot);
 	}
 	time += elapsed;
 

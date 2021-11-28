@@ -392,13 +392,7 @@ void PlayMode::do_auto_grab() {
 	}
 }
 
-void PlayMode::draw(glm::uvec2 const &drawable_size) {
-	cat_head->position.x = player.head_pos.x;
-	cat_head->position.y = player.head_pos.y;
-
-	cat_tail->position.x = player.tail_pos.x;
-	cat_tail->position.y = player.tail_pos.y;
-	
+void PlayMode::draw(glm::uvec2 const &drawable_size) {	
 	dynamic_camera.set(drawable_size);
 
 	//set up light type and position for lit_color_texture_program:
@@ -555,6 +549,11 @@ void PlayMode::celebrate_draw(glm::uvec2 const &drawable_size) {
 }
 
 void PlayMode::turn_cat() {
+	cat_head->position.x = player.head_pos.x;
+	cat_head->position.y = player.head_pos.y;
+
+	cat_tail->position.x = player.tail_pos.x;
+	cat_tail->position.y = player.tail_pos.y;
 	/*
 	if (!player.grabbing) {
 		if (player.head_vel.x > 0.f && direction) { //using direction to avoid unnecessary writes to rotation
@@ -583,37 +582,19 @@ void PlayMode::turn_cat() {
 	glm::vec3 up(0.f, 1.f, 0.f);
 
 	glm::quat body_rotation = glm::quatLookAt(norm_disp, up) * glm::quat(up * (3.14159f / 2));
+	
+	float dist = glm::distance(cat_head->position, cat_tail->position);
+	cat_body->transform->position = (cat_head->position + cat_tail->position) * .5f;
+	cat_body->transform->scale = glm::vec3(dist, 1.f, 1.f);
+
 
 	// Is the normal up (nearly) parallel to direction?
     if(glm::abs(glm::dot(norm_disp, up)) < .9999f)
 	if(glm::distance(disp, glm::vec3(0.f)) > .001f) {
 		cat_head->rotation = body_rotation;
 		cat_tail->rotation = body_rotation;
+		cat_body->transform->rotation = body_rotation;
 	}
-}
-
-/* Dynamic player meshing (WIP) */
-void PlayMode::update_body() {
-	cat_body->transform->position = (cat_tail->position);
-
-	//vertices will be accumulated into this list and then uploaded+drawn at the end of this function:
-	//std::vector< Vertex > vertices;
-			
-	//glm::u8vec4 color(255, 255, 255, 255);
-
-	//vertices.emplace_back(glm::vec3(0.f, 0.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
-	//vertices.emplace_back(glm::vec3(0.f, 1.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
-	//vertices.emplace_back(glm::vec3(1.f, 0.f, 0.0f), color, glm::vec2(0.5f, 0.5f));
-
-	
-	//upload vertices to vertex_buffer:
-	//glBindBuffer(GL_ARRAY_BUFFER, cat_body->pipeline.vao); //set vertex_buffer as current
-	////upload vertices array
-	//glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices[0]), vertices.data(), GL_DYNAMIC_DRAW);
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	//cat_body->pipeline.count = 3;
-	//cat_body->pipeline.count = 0;
 }
 
 void PlayMode::interact_objects(float elapsed) {
@@ -671,7 +652,6 @@ void PlayMode::animation_update(float elapsed) {
 
 	//reorient cat
 	turn_cat();
-	update_body();
 
 	//peets
 	//animate_feet(elapsed);

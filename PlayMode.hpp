@@ -73,7 +73,6 @@ struct PlayMode : Mode {
 	//----- movement updates -----
 	void do_auto_grab();
 	void turn_cat();
-	void update_body();
 	void animate_feet(float elapsed);
 	float timer = 0.0f;
 	float fixed_time = 0.015f;
