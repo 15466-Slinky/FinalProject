@@ -92,6 +92,30 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 			doughnut = drawable.transform;
 			assert(drawable.transform->position.z == 0.f);
 		}
+		else if (drawable.transform->name == "LeftBackFoot") {
+			lbpeet = drawable.transform;
+			lbpeet->position = (cat_tail->make_world_to_local()) * glm::vec4(lbpeet->position.x, lbpeet->position.y, lbpeet->position.z, 1.0f);
+			lbpeet->rotation = glm::inverse(cat_tail ->rotation) * lbpeet->rotation;
+			lbpeet->parent = cat_tail;
+		}
+		else if (drawable.transform->name == "LeftFrontFoot") {
+			lfpeet = drawable.transform;
+			lfpeet->position = (cat_head->make_world_to_local()) * glm::vec4(lfpeet->position.x, lfpeet->position.y, lfpeet->position.z, 1.0f);
+			lfpeet->rotation = glm::inverse(cat_head->rotation) * lfpeet->rotation;
+			lfpeet->parent = cat_head;
+		}
+		else if (drawable.transform->name == "RightBackFoot") {
+			rbpeet = drawable.transform;
+			rbpeet->position = (cat_tail->make_world_to_local()) * glm::vec4(rbpeet->position.x, rbpeet->position.y, rbpeet->position.z, 1.0f);
+			rbpeet->rotation = glm::inverse(cat_tail->rotation) * rbpeet->rotation;
+			rbpeet->parent = cat_tail;
+		}
+		else if (drawable.transform->name == "RightFrontFoot") {
+			rfpeet = drawable.transform;
+			rfpeet->position = (cat_head->make_world_to_local()) * glm::vec4(rfpeet->position.x, rfpeet->position.y, rfpeet->position.z, 1.0f);
+			rfpeet->rotation = glm::inverse(cat_head->rotation) * rfpeet->rotation;
+			rfpeet->parent = cat_head;
+		}
 		else if(drawable_name.find("Platform") != std::string::npos &&
 				// Don't actually collide with scratching posts
 				drawable_name.find("Scratch") == std::string::npos){
@@ -128,7 +152,17 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	assert(checkpoints.size() == 1); //make sure the checkpoint count matches
 	if(cat_head == nullptr) throw std::runtime_error("Cat head not found.");
 	if(cat_tail == nullptr) throw std::runtime_error("Cat tail not found.");
+	if (cat_body == nullptr) throw std::runtime_error("Cat body not found.");
 	if(doughnut == nullptr) throw std::runtime_error("Doughnut not found.");
+	if (lbpeet == nullptr) throw std::runtime_error("Cat left back foot not found.");
+	if (rbpeet == nullptr) throw std::runtime_error("Cat right back foot not found.");
+	if (lfpeet == nullptr) throw std::runtime_error("Cat left front foot not found.");
+	if (rfpeet == nullptr) throw std::runtime_error("Cat right front foot not found.");
+
+	lfpeet_base = lfpeet->position;
+	lbpeet_base = lbpeet->position;
+	rfpeet_base = rfpeet->position;
+	rbpeet_base = rbpeet->position;
 
 	player = Player(glm::vec2(cat_head->position), glm::vec2(cat_tail->position), glm::vec2(0.f), glm::vec2(0.f));
 
@@ -640,14 +674,37 @@ void PlayMode::animation_update(float elapsed) {
 	update_body();
 
 	//peets
-	animate_feet(elapsed);
+	//animate_feet(elapsed);
 
 	//update camera
 	dynamic_camera.update(elapsed, (player.head_pos + player.tail_pos) / 2.f, space.pressed && player.grabbing, glm::distance(player.head_pos, player.tail_pos) / player.length);
 }
 
 void PlayMode::animate_feet(float elapsed) {
+	//slowly rotates through [0,1):
+	wobble += elapsed / 10.0f;
+	wobble -= std::floor(wobble);
 
+	lfpeet->position = lfpeet_base + glm::vec3(
+		0.0f * std::sin(wobble * 20.0f * 2.0f * float(M_PI)),
+		0.0f,
+		-0.5f * std::sin(wobble * 20.0f * 2.0f * float(M_PI))
+	);
+	rfpeet->position = rfpeet_base + glm::vec3(
+		0.0f * std::sin(wobble * 20.0f * 2.0f * float(M_PI)),
+		0.0f,
+		0.5f * std::sin(wobble * 20.0f * 2.0f * float(M_PI))
+	);
+	lbpeet->position = lbpeet_base + glm::vec3(
+		0.0f * std::sin(wobble * 20.0f * 2.0f * float(M_PI)),
+		0.0f,
+		-0.5f * std::sin(wobble * 20.0f * 2.0f * float(M_PI))
+	);
+	rbpeet->position = rbpeet_base + glm::vec3(
+		0.0f * std::sin(wobble * 20.0f * 2.0f * float(M_PI)),
+		0.0f,
+		0.5f * std::sin(wobble * 20.0f * 2.0f * float(M_PI))
+	);
 }
 
 void PlayMode::player_phys_update(float elapsed) {

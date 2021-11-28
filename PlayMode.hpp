@@ -140,6 +140,17 @@ struct PlayMode : Mode {
 	Scene::Transform* cat_tail = nullptr;
 	Scene::Drawable* cat_body = nullptr;
 
+	//feet, stolen from my game2
+	Scene::Transform* lbpeet = nullptr;
+	Scene::Transform* lfpeet = nullptr;
+	Scene::Transform* rbpeet = nullptr;
+	Scene::Transform* rfpeet = nullptr;
+	glm::vec3 lfpeet_base;
+	glm::vec3 lbpeet_base;
+	glm::vec3 rbpeet_base;
+	glm::vec3 rfpeet_base;
+	float wobble = 0.0f;
+
 	//sound
 	std::shared_ptr< Sound::PlayingSample > bgm_loop;
 	std::shared_ptr< Sound::PlayingSample > spring_boing_SFX;
