@@ -49,7 +49,7 @@ struct ControlMode : Mode {
 	//background
 	GLuint white_tex;
 	GLuint bg_tex;
-	std::string bg_path = "control_bg.png";
+	std::string bg_path = "control_bg_no_down.png";
 
 	struct Vertex {
 		Vertex(glm::vec3 const& Position_, glm::u8vec4 const& Color_, glm::vec2 const& TexCoord_) :
