@@ -1,6 +1,5 @@
-#include "MenuMode.hpp"
-#include "PlayMode.hpp"
 #include "ControlMode.hpp"
+#include "MenuMode.hpp"
 
 #include "DrawLines.hpp"
 #include "gl_errors.hpp"
@@ -14,7 +13,7 @@
 #include <random>
 #include <iostream>	//TODO: only for debug, delete later
 	
-MenuMode::MenuMode() {
+ControlMode::ControlMode() {
 	//taken from game0
 	//----- allocate OpenGL resources -----
 	{ //vertex buffer:
@@ -114,7 +113,7 @@ MenuMode::MenuMode() {
 	glBindVertexArray(0);
 }
 
-MenuMode::~MenuMode() {
+ControlMode::~ControlMode() {
 	glDeleteTextures(1, &white_tex);
 	white_tex = 0;
 
@@ -122,7 +121,8 @@ MenuMode::~MenuMode() {
 	bg_tex = 0;
 }
 
-bool MenuMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
+
+bool ControlMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
 	// check where is mouse and which button to be clicked
 
 	if (evt.type == SDL_MOUSEBUTTONDOWN) {
@@ -140,7 +140,7 @@ bool MenuMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	return false;
 }
 
-void MenuMode::update(float elapsed) {
+void ControlMode::update(float elapsed) {
 
 	//std::cout << "mouse_pos: " << glm::to_string(mouse_pos) << std::endl;
 
@@ -148,35 +148,25 @@ void MenuMode::update(float elapsed) {
 	if(mouse_pos.x <= 0.0f){
 		if(mouse_pos.y >= -0.1f){
 			highlight_pos.y = -0.05f;
-			modeSelect = 'p';	// play mode
-		}else{
-			highlight_pos.y = -0.2f;
-			modeSelect = 'c';	// control prompt
+			modeSelect = 'm';	// play mode
 		}
 	}
 
 	if(clicked){
 		switch(modeSelect){
-			case 'p':
-				Mode::set_current(std::make_shared< PlayMode >());
+			case 'm':
+				Mode::set_current(std::make_shared< MenuMode >());
 				break;
-
-			case 'c':
-				Mode::set_current(std::make_shared< ControlMode >());
-				break;
-
 			default:
 				break;
 		}
-
 		clicked = false;
-
 	}
 	
 
 }
 
-void MenuMode::draw(glm::uvec2 const &drawable_size) {
+void ControlMode::draw(glm::uvec2 const &drawable_size) {
 	//clear the color buffer:
 	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -221,20 +211,8 @@ void MenuMode::draw(glm::uvec2 const &drawable_size) {
 
 		glm::vec2 left_anchor = glm::vec2(-aspect + 0.1f, 0.0f);
 
-		// draw game title
-		draw_text(left_anchor + title_pos, "Slinky Game", 0.4f);
-
 		// draw menu buttons
-		draw_text(left_anchor + start_button_pos, "Start Game", 0.1f);	// start button
-		draw_text(left_anchor + control_button_pos, "Controls", 0.1f);	// control prompt button
-
-		//prompt
-		draw_text(glm::vec2(-aspect + 0.1f,-0.8f), "Select with mouse", 0.09f);
-
-		// credits
-		draw_text(glm::vec2(-aspect + 0.1f,-0.9f),
-				"Produced by Slinky Group: Anne He, George Ralph, Katherine Wang, Wenxuan Ou, and Tejas Srivatsav",
-				0.05f);
+		draw_text(left_anchor + start_button_pos, "Back", 0.1f);	// start button
 
 		// highlight box
 		lines.draw_box(glm::mat4(
@@ -256,7 +234,7 @@ void MenuMode::draw(glm::uvec2 const &drawable_size) {
 	GL_ERRORS();
 }
 
-void MenuMode::draw_image(GLuint &tex, float left, float right, float top, float bottom) {
+void ControlMode::draw_image(GLuint &tex, float left, float right, float top, float bottom) {
 	std::vector< Vertex > vertices;
 	vertices.emplace_back(Vertex(glm::vec3(left, top, 0.0f), white, glm::vec2(0.0f, 1.0f)));
 	vertices.emplace_back(Vertex(glm::vec3(right, top, 0.0f), white, glm::vec2(1.0f, 1.0f)));
