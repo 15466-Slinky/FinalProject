@@ -30,7 +30,7 @@ void Check_Point::activate(float elapsed) {
 	assert(activating);
 	assert(box_has_sides());
 
-	float rot_speed = 3.14159f / 2;
+	float rot_speed = 3.14159f / 2.f;
 	{ //make the front of the box fall down
 		glm::vec3 euler_rot = glm::vec3(time * rot_speed, 0.f, 0.f);
 		box_front->rotation = glm::quat(euler_rot);

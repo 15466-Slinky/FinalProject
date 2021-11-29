@@ -1,4 +1,4 @@
-	#include "LitColorTextureProgram.hpp"
+#include "LitColorTextureProgram.hpp"
 #include "ColorTextureProgram.hpp"
 #include "load_save_png.hpp"
 
