@@ -134,6 +134,20 @@ PlayMode::PlayMode(int level) {
 	// Pick the scene we want to load
 	scene = *(*scenes[level]);
 
+	switch (level) {
+		case 1:
+			current_bg = bg1_path;
+			break;
+		case 2:
+			current_bg = bg2_path;
+			break;
+		case 3:
+			current_bg = bg3_path;
+			break;
+		default:
+			current_bg = bg1_path;
+	}
+
 	// get pointer to each shape
 	for (auto &drawable : scene.drawables) {
 		std::string drawable_name = drawable.transform->name;
@@ -201,7 +215,7 @@ PlayMode::PlayMode(int level) {
 			//fish don't have to be at z-value 0.f for visual reasons
 		}
 		else if (drawable_name == "Background") {
-			GLuint tex = load_texture(data_path("bg.png"));
+			GLuint tex = load_texture(data_path(current_bg));
 			drawable.pipeline.textures[0].texture = tex;
 		}
 	}

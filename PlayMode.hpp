@@ -154,6 +154,11 @@ struct PlayMode : Mode {
 	float wobblefront = 0.0f;
 	float wobbleback = 0.0f;
 
+	std::string bg1_path = "bg.png";
+	std::string bg2_path = "bg2.png";
+	std::string bg3_path = "bg3.png";
+	std::string current_bg = bg1_path;
+
 	//sound
 	std::shared_ptr< Sound::PlayingSample > bgm_loop;
 	std::shared_ptr< Sound::PlayingSample > spring_boing_SFX;
