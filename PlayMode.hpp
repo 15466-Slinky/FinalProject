@@ -21,7 +21,7 @@
 #define DEATH_BOUND -50.f
 
 struct PlayMode : Mode {
-	PlayMode();
+	PlayMode(int level);
 	virtual ~PlayMode();
 
 	//functions called by main loop:
@@ -79,6 +79,7 @@ struct PlayMode : Mode {
 
 	//----- game state -----
 	bool game_over = false;
+	int level_id;
 
 	//collisions
 	CollisionManager collision_manager;

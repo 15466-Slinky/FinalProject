@@ -23,15 +23,18 @@
 
 //------------ Scene and mesh loading ---------- //
 GLuint slinky_meshes_for_lit_color_texture_program = 0;
-Load< MeshBuffer > slinky_meshes(LoadTagDefault, []() -> MeshBuffer const * {
-	MeshBuffer const *ret = new MeshBuffer(data_path("slinky.pnct"));
+
+// Really hacky scene loading solution where we load all of them
+// I'm sorry, this is just what I had to do
+Load< MeshBuffer > slinky_meshes1(LoadTagDefault, []() -> MeshBuffer const * {
+	MeshBuffer const *ret = new MeshBuffer(data_path("slinky1.pnct"));
 	slinky_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret;
 });
 
-Load< Scene > slinky_scene(LoadTagDefault, []() -> Scene const * {
-	return new Scene(data_path("slinky.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
-		Mesh const &mesh = slinky_meshes->lookup(mesh_name);
+Load< Scene > slinky_scene1(LoadTagDefault, []() -> Scene const * {
+	return new Scene(data_path("slinky1.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+		Mesh const &mesh = slinky_meshes1->lookup(mesh_name);
 
 		//get 4 pairs of shapes
 		scene.drawables.emplace_back(transform);
@@ -46,6 +49,34 @@ Load< Scene > slinky_scene(LoadTagDefault, []() -> Scene const * {
 		drawable.pipeline.count = mesh.count;
 	});
 });
+
+Load< MeshBuffer > slinky_meshes2(LoadTagDefault, []() -> MeshBuffer const * {
+	MeshBuffer const *ret = new MeshBuffer(data_path("slinky2.pnct"));
+	slinky_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
+	return ret;
+});
+
+Load< Scene > slinky_scene2(LoadTagDefault, []() -> Scene const * {
+	return new Scene(data_path("slinky2.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+		Mesh const &mesh = slinky_meshes2->lookup(mesh_name);
+
+		//get 4 pairs of shapes
+		scene.drawables.emplace_back(transform);
+
+		Scene::Drawable &drawable = scene.drawables.back();
+
+		drawable.pipeline = lit_color_texture_program_pipeline;
+
+		drawable.pipeline.vao = slinky_meshes_for_lit_color_texture_program;
+		drawable.pipeline.type = mesh.type;
+		drawable.pipeline.start = mesh.start;
+		drawable.pipeline.count = mesh.count;
+	});
+});
+
+
+// Array of the loaded scenes to dereference on PlayMode creation
+Load< Scene >* scenes[2] = {&slinky_scene1, &slinky_scene2};
 
 //--------------- Music and SFX loading --------------//
 Load< Sound::Sample > bgm_loop_sample(LoadTagDefault, []() -> Sound::Sample const * {
@@ -69,8 +100,13 @@ Load< Sound::Sample > nt_effect_sample(LoadTagDefault, []() -> Sound::Sample con
 });
 
 //------------- Functions -----------------//
-PlayMode::PlayMode() : scene(*slinky_scene) {
+PlayMode::PlayMode(int level) {
 	srand((unsigned int)time(NULL));
+
+	level_id = level;
+
+	// Pick the scene we want to load
+	scene = *(*scenes[level]);
 
 	// get pointer to each shape
 	for (auto &drawable : scene.drawables) {
@@ -147,9 +183,9 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	
 	// check all loaded
 	if (platforms.empty()) throw std::runtime_error("Platforms not found.");
-	assert(platforms.size() == 9); // make sure platform count matched
+	//assert(platforms.size() == 9); // make sure platform count matched
 	if (checkpoints.empty()) throw std::runtime_error("Checkpoints not found.");
-	assert(checkpoints.size() == 1); //make sure the checkpoint count matches
+	//assert(checkpoints.size() == 1); //make sure the checkpoint count matches
 	if(cat_head == nullptr) throw std::runtime_error("Cat head not found.");
 	if(cat_tail == nullptr) throw std::runtime_error("Cat tail not found.");
 	if (cat_body == nullptr) throw std::runtime_error("Cat body not found.");
