@@ -30,17 +30,19 @@ void Check_Point::activate(float elapsed) {
 	assert(activating);
 	assert(box_has_sides());
 
+	// Exponentiate the elapsed time to get an eased animation
+	float anim_time = time * time * time * time * time;
 	float rot_speed = 3.14159f / 2.f;
 	{ //make the front of the box fall down
-		glm::vec3 euler_rot = glm::vec3(time * rot_speed, 0.f, 0.f);
+		glm::vec3 euler_rot = glm::vec3(anim_time * rot_speed, 0.f, 0.f);
 		box_front->rotation = glm::quat(euler_rot);
 	}
 	{ //make the left side of the box fall down
-		glm::vec3 euler_rot = glm::vec3(0.f, 0.f, time * rot_speed);
+		glm::vec3 euler_rot = glm::vec3(0.f, 0.f, anim_time * rot_speed);
 		box_left->rotation = glm::quat(euler_rot);
 	}
 	{ //make the right side of the box fall down
-		glm::vec3 euler_rot = glm::vec3(0.f, 0.f, -time * rot_speed);
+		glm::vec3 euler_rot = glm::vec3(0.f, 0.f, -anim_time * rot_speed);
 		box_right->rotation = glm::quat(euler_rot);
 	}
 	time += elapsed;
