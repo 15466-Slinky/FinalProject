@@ -158,7 +158,7 @@ void MenuMode::update(float elapsed) {
 	if(clicked){
 		switch(modeSelect){
 			case 'p':
-				Mode::set_current(std::make_shared< PlayMode >(1));
+				Mode::set_current(std::make_shared< PlayMode >(0));
 				break;
 
 			case 'c':

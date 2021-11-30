@@ -75,8 +75,34 @@ Load< Scene > slinky_scene2(LoadTagDefault, []() -> Scene const * {
 });
 
 
+Load< MeshBuffer > slinky_meshes3(LoadTagDefault, []() -> MeshBuffer const * {
+	MeshBuffer const *ret = new MeshBuffer(data_path("slinky3.pnct"));
+	slinky_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
+	return ret;
+});
+
+Load< Scene > slinky_scene3(LoadTagDefault, []() -> Scene const * {
+	return new Scene(data_path("slinky3.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+		Mesh const &mesh = slinky_meshes3->lookup(mesh_name);
+
+		//get 4 pairs of shapes
+		scene.drawables.emplace_back(transform);
+
+		Scene::Drawable &drawable = scene.drawables.back();
+
+		drawable.pipeline = lit_color_texture_program_pipeline;
+
+		drawable.pipeline.vao = slinky_meshes_for_lit_color_texture_program;
+		drawable.pipeline.type = mesh.type;
+		drawable.pipeline.start = mesh.start;
+		drawable.pipeline.count = mesh.count;
+	});
+});
+
+
+
 // Array of the loaded scenes to dereference on PlayMode creation
-Load< Scene >* scenes[2] = {&slinky_scene1, &slinky_scene2};
+Load< Scene >* scenes[LEVEL_CNT] = {&slinky_scene1, &slinky_scene2, &slinky_scene3};
 
 //--------------- Music and SFX loading --------------//
 Load< Sound::Sample > bgm_loop_sample(LoadTagDefault, []() -> Sound::Sample const * {
@@ -168,7 +194,6 @@ PlayMode::PlayMode(int level) {
 		}
 		else if(drawable_name.find("Scratch") != std::string::npos && 
 				drawable_name.find("Post") != std::string::npos) {
-			printf("%s\n", drawable_name.c_str());
 			grab_points.emplace_back(glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
 		}
 		else if(drawable_name.find("Fish") != std::string::npos){
@@ -411,6 +436,17 @@ void PlayMode::update(float elapsed) {
 	up.downs = 0;
 	down.downs = 0;
 	space.downs = 0;
+
+	// If we won and it's not the last level, wait 2 seconds and then enter the next level
+	if(game_over && level_id + 1 < LEVEL_CNT) {
+		level_switch_timer += elapsed;
+
+		if(level_switch_timer > 2.f) {
+			//TODO: need to move everything that holds playmode inplace
+			Sound::stop_all_samples();
+			Mode::set_current(std::make_shared< PlayMode >(level_id + 1));
+		}
+	}
 }
 
 /* Checks to see if the player has approached any grab points, and automatically grabs 
@@ -451,7 +487,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	
 	GL_ERRORS();
 
-	if (game_over) { //use DrawLines to overlay some text:
+	if (game_over) { 
 		glDisable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
 		float aspect = float(drawable_size.x) / float(drawable_size.y);
@@ -474,7 +510,9 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 				glm::u8vec4(0xff, 0xff, 0xff, 0xff));
 		};
 
-		draw_text(glm::vec2(-aspect + 0.5f, 0.0f), "GAME OVER: YOU WIN!", 0.4f);
+		//use DrawLines to overlay some text for the last level
+		if(level_id + 1 == LEVEL_CNT)
+			draw_text(glm::vec2(-aspect + 0.5f, 0.0f), "GAME OVER: YOU WIN!", 0.4f);
 
 		celebrate_draw(drawable_size);
 	}
