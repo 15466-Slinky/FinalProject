@@ -134,14 +134,14 @@ PlayMode::PlayMode(int level) {
 	// Pick the scene we want to load
 	scene = *(*scenes[level]);
 
-	switch (level) {
-		case 1:
+	switch (level_id) {
+		case 0:
 			current_bg = bg1_path;
 			break;
-		case 2:
+		case 1:
 			current_bg = bg2_path;
 			break;
-		case 3:
+		case 2:
 			current_bg = bg3_path;
 			break;
 		default:
