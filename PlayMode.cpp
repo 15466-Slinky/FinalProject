@@ -23,15 +23,18 @@
 
 //------------ Scene and mesh loading ---------- //
 GLuint slinky_meshes_for_lit_color_texture_program = 0;
-Load< MeshBuffer > slinky_meshes(LoadTagDefault, []() -> MeshBuffer const * {
-	MeshBuffer const *ret = new MeshBuffer(data_path("slinky.pnct"));
+
+// Really hacky scene loading solution where we load all of them
+// I'm sorry, this is just what I had to do
+Load< MeshBuffer > slinky_meshes1(LoadTagDefault, []() -> MeshBuffer const * {
+	MeshBuffer const *ret = new MeshBuffer(data_path("slinky1.pnct"));
 	slinky_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret;
 });
 
-Load< Scene > slinky_scene(LoadTagDefault, []() -> Scene const * {
-	return new Scene(data_path("slinky.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
-		Mesh const &mesh = slinky_meshes->lookup(mesh_name);
+Load< Scene > slinky_scene1(LoadTagDefault, []() -> Scene const * {
+	return new Scene(data_path("slinky1.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+		Mesh const &mesh = slinky_meshes1->lookup(mesh_name);
 
 		//get 4 pairs of shapes
 		scene.drawables.emplace_back(transform);
@@ -46,6 +49,60 @@ Load< Scene > slinky_scene(LoadTagDefault, []() -> Scene const * {
 		drawable.pipeline.count = mesh.count;
 	});
 });
+
+Load< MeshBuffer > slinky_meshes2(LoadTagDefault, []() -> MeshBuffer const * {
+	MeshBuffer const *ret = new MeshBuffer(data_path("slinky2.pnct"));
+	slinky_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
+	return ret;
+});
+
+Load< Scene > slinky_scene2(LoadTagDefault, []() -> Scene const * {
+	return new Scene(data_path("slinky2.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+		Mesh const &mesh = slinky_meshes2->lookup(mesh_name);
+
+		//get 4 pairs of shapes
+		scene.drawables.emplace_back(transform);
+
+		Scene::Drawable &drawable = scene.drawables.back();
+
+		drawable.pipeline = lit_color_texture_program_pipeline;
+
+		drawable.pipeline.vao = slinky_meshes_for_lit_color_texture_program;
+		drawable.pipeline.type = mesh.type;
+		drawable.pipeline.start = mesh.start;
+		drawable.pipeline.count = mesh.count;
+	});
+});
+
+
+Load< MeshBuffer > slinky_meshes3(LoadTagDefault, []() -> MeshBuffer const * {
+	MeshBuffer const *ret = new MeshBuffer(data_path("slinky3.pnct"));
+	slinky_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
+	return ret;
+});
+
+Load< Scene > slinky_scene3(LoadTagDefault, []() -> Scene const * {
+	return new Scene(data_path("slinky3.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+		Mesh const &mesh = slinky_meshes3->lookup(mesh_name);
+
+		//get 4 pairs of shapes
+		scene.drawables.emplace_back(transform);
+
+		Scene::Drawable &drawable = scene.drawables.back();
+
+		drawable.pipeline = lit_color_texture_program_pipeline;
+
+		drawable.pipeline.vao = slinky_meshes_for_lit_color_texture_program;
+		drawable.pipeline.type = mesh.type;
+		drawable.pipeline.start = mesh.start;
+		drawable.pipeline.count = mesh.count;
+	});
+});
+
+
+
+// Array of the loaded scenes to dereference on PlayMode creation
+Load< Scene >* scenes[LEVEL_CNT] = {&slinky_scene1, &slinky_scene2, &slinky_scene3};
 
 //--------------- Music and SFX loading --------------//
 Load< Sound::Sample > bgm_loop_sample(LoadTagDefault, []() -> Sound::Sample const * {
@@ -69,8 +126,13 @@ Load< Sound::Sample > nt_effect_sample(LoadTagDefault, []() -> Sound::Sample con
 });
 
 //------------- Functions -----------------//
-PlayMode::PlayMode() : scene(*slinky_scene) {
+PlayMode::PlayMode(int level) {
 	srand((unsigned int)time(NULL));
+
+	level_id = level;
+
+	// Pick the scene we want to load
+	scene = *(*scenes[level]);
 
 	// get pointer to each shape
 	for (auto &drawable : scene.drawables) {
@@ -132,7 +194,6 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 		}
 		else if(drawable_name.find("Scratch") != std::string::npos && 
 				drawable_name.find("Post") != std::string::npos) {
-			printf("%s\n", drawable_name.c_str());
 			grab_points.emplace_back(glm::vec2(drawable.transform->position.x, drawable.transform->position.y));
 		}
 		else if(drawable_name.find("Fish") != std::string::npos){
@@ -147,9 +208,9 @@ PlayMode::PlayMode() : scene(*slinky_scene) {
 	
 	// check all loaded
 	if (platforms.empty()) throw std::runtime_error("Platforms not found.");
-	assert(platforms.size() == 9); // make sure platform count matched
+	//assert(platforms.size() == 9); // make sure platform count matched
 	if (checkpoints.empty()) throw std::runtime_error("Checkpoints not found.");
-	assert(checkpoints.size() == 1); //make sure the checkpoint count matches
+	//assert(checkpoints.size() == 1); //make sure the checkpoint count matches
 	if(cat_head == nullptr) throw std::runtime_error("Cat head not found.");
 	if(cat_tail == nullptr) throw std::runtime_error("Cat tail not found.");
 	if (cat_body == nullptr) throw std::runtime_error("Cat body not found.");
@@ -348,7 +409,9 @@ void PlayMode::update(float elapsed) {
 	//check if the game has ended, aka if we have eaten the donut
 	if (game_over)
     	celebrate_update(elapsed);
-	if (glm::distance(player.head_pos, glm::vec2(doughnut->position)) < 5.f) {
+
+	if (glm::distance(player.head_pos, glm::vec2(doughnut->position)) < 5.f &&
+		fishes.size() == 0) {
 		game_over = true;
 	}
 
@@ -375,6 +438,17 @@ void PlayMode::update(float elapsed) {
 	up.downs = 0;
 	down.downs = 0;
 	space.downs = 0;
+
+	// If we won and it's not the last level, wait 2 seconds and then enter the next level
+	if(game_over && level_id + 1 < LEVEL_CNT) {
+		level_switch_timer += elapsed;
+
+		if(level_switch_timer > 2.f) {
+			//TODO: need to move everything that holds playmode inplace
+			Sound::stop_all_samples();
+			Mode::set_current(std::make_shared< PlayMode >(level_id + 1));
+		}
+	}
 }
 
 /* Checks to see if the player has approached any grab points, and automatically grabs 
@@ -415,7 +489,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	
 	GL_ERRORS();
 
-	if (game_over) { //use DrawLines to overlay some text:
+	if (game_over) { 
 		glDisable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
 		float aspect = float(drawable_size.x) / float(drawable_size.y);
@@ -438,7 +512,9 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 				glm::u8vec4(0xff, 0xff, 0xff, 0xff));
 		};
 
-		draw_text(glm::vec2(-aspect + 0.5f, 0.0f), "GAME OVER: YOU WIN!", 0.4f);
+		//use DrawLines to overlay some text for the last level
+		if(level_id + 1 == LEVEL_CNT)
+			draw_text(glm::vec2(-aspect + 0.5f, 0.0f), "GAME OVER: YOU WIN!", 0.4f);
 
 		celebrate_draw(drawable_size);
 	}

@@ -19,9 +19,10 @@
 
 #define GRAVITY 10.f
 #define DEATH_BOUND -50.f
+#define LEVEL_CNT 3
 
 struct PlayMode : Mode {
-	PlayMode();
+	PlayMode(int level);
 	virtual ~PlayMode();
 
 	//functions called by main loop:
@@ -79,6 +80,8 @@ struct PlayMode : Mode {
 
 	//----- game state -----
 	bool game_over = false;
+	int level_id;
+	float level_switch_timer = 0.f;
 
 	//collisions
 	CollisionManager collision_manager;
