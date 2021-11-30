@@ -48,8 +48,17 @@ struct ControlMode : Mode {
 
 	//background
 	GLuint white_tex;
-	GLuint bg_tex;
-	std::string bg_path = "control_bg_no_down.png";
+	GLuint bg1_tex;
+	GLuint bg2_tex;
+	GLuint bg1_back_highlighted_tex;
+	GLuint bg1_next_highlighted_tex;
+	GLuint bg2_back_highlighted_tex;
+	std::string bg1_path = "control_bg1.png";
+	std::string bg2_path = "control_bg2.png";
+	std::string bg1_back_path = "control_bg1_backselected.png";
+	std::string bg1_next_path = "control_bg1_nextselected.png";
+	std::string bg2_back_path = "control_bg2_backselected.png";
+	GLuint active_tex;
 
 	struct Vertex {
 		Vertex(glm::vec3 const& Position_, glm::u8vec4 const& Color_, glm::vec2 const& TexCoord_) :

@@ -37,7 +37,7 @@ struct MenuMode : Mode {
 	glm::vec2 title_pos = glm::vec2(0.0f, 0.3f);
 
 	//button positions
-	glm::vec2 start_button_pos = glm::vec2(0.0f, -0.1f); //TODO: set button positions
+	glm::vec2 start_button_pos = glm::vec2(0.032f, -0.1f); //TODO: set button positions
 	glm::vec2 control_button_pos = glm::vec2(0.0f, -0.25f); //TODO: set button 
 
 	glm::vec2 highlight_pos = glm::vec2(0.3f, -0.05f);	// overlay menu options, (0.3f, -0.05f) or (0.3f, -0.1)
@@ -53,7 +53,12 @@ struct MenuMode : Mode {
 	//background
 	GLuint white_tex;
 	GLuint bg_tex;
-	std::string bg_path = "menu_bg.png";
+	GLuint play_highlighted_tex;
+	GLuint control_highlighted_tex;
+	std::string bg_path = "titlemenu.png";
+	std::string bg_play_path = "titlemenu_playselected.png";
+	std::string bg_control_path = "titlemenu_controlsselected.png";
+	GLuint active_tex;
 
 	struct Vertex {
 		Vertex(glm::vec3 const& Position_, glm::u8vec4 const& Color_, glm::vec2 const& TexCoord_) :

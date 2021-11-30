@@ -73,6 +73,7 @@ ControlMode::ControlMode() {
 
 		GL_ERRORS(); //PARANOIA: print out any OpenGL errors that may have happened
 	}
+	/*
 	{ //solid white texture:
 		//ask OpenGL to fill white_tex with the name of an unused texture object:
 		glGenTextures(1, &white_tex);
@@ -99,26 +100,83 @@ ControlMode::ControlMode() {
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		GL_ERRORS(); //PARANOIA: print out any OpenGL errors that may have happened
-	}
+	}*/
 
 	std::vector< glm::u8vec4 > data;
 	glm::uvec2 size(0, 0);
-	load_png(data_path(bg_path), &size, &data, UpperLeftOrigin);
-	glGenTextures(1, &bg_tex);
-	glBindTexture(GL_TEXTURE_2D, bg_tex);
+
+	load_png(data_path(bg2_path), &size, &data, UpperLeftOrigin);
+	glGenTextures(1, &bg2_tex);
+	glBindTexture(GL_TEXTURE_2D, bg2_tex);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	data.clear();
 
-	glBindVertexArray(0);
+	load_png(data_path(bg1_back_path), &size, &data, UpperLeftOrigin);
+	glGenTextures(1, &bg1_back_highlighted_tex);
+	glBindTexture(GL_TEXTURE_2D, bg1_back_highlighted_tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	data.clear();
+
+	load_png(data_path(bg1_next_path), &size, &data, UpperLeftOrigin);
+	glGenTextures(1, &bg1_next_highlighted_tex);
+	glBindTexture(GL_TEXTURE_2D, bg1_next_highlighted_tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	data.clear();
+
+	load_png(data_path(bg2_back_path), &size, &data, UpperLeftOrigin);
+	glGenTextures(1, &bg2_back_highlighted_tex);
+	glBindTexture(GL_TEXTURE_2D, bg2_back_highlighted_tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	data.clear();
+
+	load_png(data_path(bg1_path), &size, &data, UpperLeftOrigin);
+	glGenTextures(1, &bg1_tex);
+	glBindTexture(GL_TEXTURE_2D, bg1_tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	data.clear();
+
+	//glBindVertexArray(0);
+	active_tex = bg1_tex;
 }
 
 ControlMode::~ControlMode() {
 	glDeleteTextures(1, &white_tex);
 	white_tex = 0;
 
-	glDeleteTextures(1, &bg_tex);
-	bg_tex = 0;
+	glDeleteTextures(1, &bg1_tex);
+	bg1_tex = 0;
+
+	glDeleteTextures(1, &bg2_tex);
+	bg2_tex = 0;
+
+	glDeleteTextures(1, &bg1_back_highlighted_tex);
+	bg1_back_highlighted_tex = 0;
+
+	glDeleteTextures(1, &bg1_next_highlighted_tex);
+	bg1_next_highlighted_tex = 0;
+
+	glDeleteTextures(1, &bg2_back_highlighted_tex);
+	bg2_back_highlighted_tex = 0;
 }
 
 
@@ -145,11 +203,34 @@ void ControlMode::update(float elapsed) {
 	//std::cout << "mouse_pos: " << glm::to_string(mouse_pos) << std::endl;
 
 	// update highlight
-	if(mouse_pos.x <= 0.0f){
-		if(mouse_pos.y >= -0.1f){
-			highlight_pos.y = -0.05f;
+	if(mouse_pos.y <= -0.68f){
+		if(active_tex != bg2_tex && active_tex != bg2_back_highlighted_tex && mouse_pos.x >= -0.94f && mouse_pos.x <= -0.49f){
+			//highlight_pos.y = -0.05f;
 			modeSelect = 'm';	// play mode
+			active_tex = bg1_back_highlighted_tex;
+		} else if (active_tex != bg2_tex && active_tex != bg2_back_highlighted_tex && mouse_pos.x >= 0.49f && mouse_pos.x <= 0.95f) {
+			//highlight_pos.y = -0.05f;
+			modeSelect = 'n';	// next screen
+			active_tex = bg1_next_highlighted_tex;
+		} else if ((active_tex == bg2_tex || active_tex == bg2_back_highlighted_tex) && mouse_pos.x >= 0.49f && mouse_pos.x <= 0.95f) {
+			//highlight_pos.y = -0.05f;
+			modeSelect = 'c';	// go back
+			active_tex = bg2_back_highlighted_tex;
+		} else if (active_tex == bg2_back_highlighted_tex) {
+			modeSelect = 'n';  // stay on second screen
+			active_tex = bg2_tex;
+		} else if (active_tex != bg2_tex) {
+			modeSelect = 'c';
+			active_tex = bg1_tex;
 		}
+	}
+	else if (active_tex == bg2_back_highlighted_tex) {
+		modeSelect = 'n';  // stay on second screen
+		active_tex = bg2_tex;
+	}
+	else if (active_tex != bg2_tex) {
+		modeSelect = 'c';
+		active_tex = bg1_tex;
 	}
 
 	if(clicked){
@@ -157,6 +238,11 @@ void ControlMode::update(float elapsed) {
 			case 'm':
 				Mode::set_current(std::make_shared< MenuMode >());
 				break;
+			case 'n':
+				active_tex = bg2_tex;
+				break;
+			case 'c':
+				active_tex = bg1_tex;
 			default:
 				break;
 		}
@@ -183,8 +269,9 @@ void ControlMode::draw(glm::uvec2 const &drawable_size) {
 	glBindVertexArray(vertex_buffer_for_color_texture_program);
 	glUniformMatrix4fv(color_texture_program->OBJECT_TO_CLIP_mat4, 1, GL_FALSE, glm::value_ptr(projection));
 
-	draw_image(bg_tex, 0.0f, (float)drawable_size.x, 0.0f, (float)drawable_size.y);
+	draw_image(active_tex, 0.0f, (float)drawable_size.x, 0.0f, (float)drawable_size.y);
 
+	/*
 	{ //use DrawLines to overlay some text:
 		//draw button and text
 		glDisable(GL_BLEND);
@@ -226,6 +313,7 @@ void ControlMode::draw(glm::uvec2 const &drawable_size) {
 
 		
 	}
+	*/
 
 	glBindVertexArray(0);
 	glBindTexture(GL_TEXTURE_2D, 0);

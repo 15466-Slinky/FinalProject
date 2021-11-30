@@ -74,6 +74,7 @@ MenuMode::MenuMode() {
 
 		GL_ERRORS(); //PARANOIA: print out any OpenGL errors that may have happened
 	}
+	/*
 	{ //solid white texture:
 		//ask OpenGL to fill white_tex with the name of an unused texture object:
 		glGenTextures(1, &white_tex);
@@ -100,18 +101,44 @@ MenuMode::MenuMode() {
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		GL_ERRORS(); //PARANOIA: print out any OpenGL errors that may have happened
-	}
+	}*/
 
 	std::vector< glm::u8vec4 > data;
 	glm::uvec2 size(0, 0);
+
+	load_png(data_path(bg_play_path), &size, &data, UpperLeftOrigin);
+	glGenTextures(1, &play_highlighted_tex);
+	glBindTexture(GL_TEXTURE_2D, play_highlighted_tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	data.clear();
+
+	load_png(data_path(bg_control_path), &size, &data, UpperLeftOrigin);
+	glGenTextures(1, &control_highlighted_tex);
+	glBindTexture(GL_TEXTURE_2D, control_highlighted_tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	data.clear();
+
 	load_png(data_path(bg_path), &size, &data, UpperLeftOrigin);
 	glGenTextures(1, &bg_tex);
 	glBindTexture(GL_TEXTURE_2D, bg_tex);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	data.clear();
 
-	glBindVertexArray(0);
+	//glBindVertexArray(0);
+
+	active_tex = bg_tex;
 }
 
 MenuMode::~MenuMode() {
@@ -120,6 +147,12 @@ MenuMode::~MenuMode() {
 
 	glDeleteTextures(1, &bg_tex);
 	bg_tex = 0;
+
+	glDeleteTextures(1, &play_highlighted_tex);
+	play_highlighted_tex = 0;
+
+	glDeleteTextures(1, &control_highlighted_tex);
+	control_highlighted_tex = 0;
 }
 
 bool MenuMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
@@ -145,14 +178,24 @@ void MenuMode::update(float elapsed) {
 	//std::cout << "mouse_pos: " << glm::to_string(mouse_pos) << std::endl;
 
 	// update highlight
-	if(mouse_pos.x <= 0.0f){
-		if(mouse_pos.y >= -0.1f){
-			highlight_pos.y = -0.05f;
+	if(mouse_pos.x >= -0.93f && mouse_pos.x <= -0.39f){
+		if(mouse_pos.y <= 0.05f && mouse_pos.y >= -0.22f){
+			//highlight_pos.y = -0.05f;
+			active_tex = play_highlighted_tex;
 			modeSelect = 'p';	// play mode
-		}else{
-			highlight_pos.y = -0.2f;
+		}else if(mouse_pos.y <= -0.42f && mouse_pos.y >= -0.69f){
+			//highlight_pos.y = -0.2f;
+			active_tex = control_highlighted_tex;
 			modeSelect = 'c';	// control prompt
 		}
+		else {
+			active_tex = bg_tex;
+			modeSelect = 'm';
+		}
+	}
+	else {
+		active_tex = bg_tex;
+		modeSelect = 'm';
 	}
 
 	if(clicked){
@@ -193,8 +236,9 @@ void MenuMode::draw(glm::uvec2 const &drawable_size) {
 	glBindVertexArray(vertex_buffer_for_color_texture_program);
 	glUniformMatrix4fv(color_texture_program->OBJECT_TO_CLIP_mat4, 1, GL_FALSE, glm::value_ptr(projection));
 
-	draw_image(bg_tex, 0.0f, (float)drawable_size.x, 0.0f, (float)drawable_size.y);
+	draw_image(active_tex, 0.0f, (float)drawable_size.x, 0.0f, (float)drawable_size.y);
 
+	/*
 	{ //use DrawLines to overlay some text:
 		//draw button and text
 		glDisable(GL_BLEND);
@@ -248,6 +292,7 @@ void MenuMode::draw(glm::uvec2 const &drawable_size) {
 
 		
 	}
+	*/
 
 	glBindVertexArray(0);
 	glBindTexture(GL_TEXTURE_2D, 0);
