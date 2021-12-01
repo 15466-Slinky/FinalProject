@@ -123,10 +123,10 @@ struct PlayMode : Mode {
 
 	//fireworks
 	size_t max_fireworks_num = 30;
-	float max_fireworks_age = 10.f;
-	float fireworks_time_between = 0.2f;
+	float max_fireworks_age = 3.f;
+	float fireworks_time_between = 0.1f;
 	float fireworks_countdown = 0.f;
-	float fireworks_speed = 15.f;
+	float fireworks_speed = 20.f;
 	std::vector<firework> fireworks;
 	
 	//scene
