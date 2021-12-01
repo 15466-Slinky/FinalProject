@@ -2,6 +2,7 @@
 #include "Mode.hpp"
 
 //Enter from main menu
+#include "GP21IntroMode.hpp"
 #include "MenuMode.hpp"
 
 //For asset loading:
@@ -112,7 +113,7 @@ int main(int argc, char **argv) {
 	call_load_functions();
 
 	//------------ create game mode + make current --------------
-	Mode::set_current(std::make_shared< MenuMode >());	// game start from menu
+	Mode::set_current(std::make_shared< GP21IntroMode >( std::make_shared< MenuMode >() ));	// game start from intro, then menu
 
 	//------------ main loop ------------
 
