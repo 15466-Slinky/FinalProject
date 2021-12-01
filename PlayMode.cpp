@@ -503,29 +503,37 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	
 	GL_ERRORS();
 
+	glDisable(GL_BLEND);
+	glDisable(GL_DEPTH_TEST);
+	float aspect = float(drawable_size.x) / float(drawable_size.y);
+	DrawLines lines(glm::mat4(
+		1.0f / aspect, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	));
+
+	auto draw_text = [&](glm::vec2 const &at, std::string const &text, float H) {
+		lines.draw_text(text,
+			glm::vec3(at.x, at.y, 0.0),
+			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+			glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+		float ofs = 2.0f / drawable_size.y;
+		lines.draw_text(text,
+			glm::vec3(at.x + ofs, at.y + ofs, 0.0),
+			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+			glm::u8vec4(0xff, 0xff, 0xff, 0xff));
+	};
+
+	std::string fish_remaining_text = "Fish Remaining: " + std::to_string(fishes.size());
+	draw_text(glm::vec2(-aspect + 0.1f, 0.8f), fish_remaining_text, 0.1f);
+
+	if (glm::distance(player.head_pos, glm::vec2(doughnut->position)) < 5.f &&
+		fishes.size() > 0) {
+
+		draw_text(glm::vec2(-aspect + 0.5f, 0.0f), "Save the donut for dessert!", 0.1f);
+	}
 	if (game_over) { 
-		glDisable(GL_BLEND);
-		glDisable(GL_DEPTH_TEST);
-		float aspect = float(drawable_size.x) / float(drawable_size.y);
-		DrawLines lines(glm::mat4(
-			1.0f / aspect, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f
-		));
-
-		auto draw_text = [&](glm::vec2 const &at, std::string const &text, float H) {
-			lines.draw_text(text,
-				glm::vec3(at.x, at.y, 0.0),
-				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-				glm::u8vec4(0x00, 0x00, 0x00, 0xff));
-			float ofs = 2.0f / drawable_size.y;
-			lines.draw_text(text,
-				glm::vec3(at.x + ofs, at.y + ofs, 0.0),
-				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-				glm::u8vec4(0xff, 0xff, 0xff, 0xff));
-		};
-
 		//use DrawLines to overlay some text for the last level
 		if(level_id + 1 == LEVEL_CNT)
 			draw_text(glm::vec2(-aspect + 0.5f, 0.0f), "GAME OVER: YOU WIN!", 0.4f);
