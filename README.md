@@ -22,3 +22,5 @@ scenes/slinky.blend contains the game world, built with Blender.
 In game music obtained from https://freepd.com/
 
 SFX from https://freesound.org
+
+Wood texture from https://unsplash.com/
