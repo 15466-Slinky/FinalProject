@@ -109,7 +109,7 @@ Load< MeshBuffer > slinky_meshes4(LoadTagDefault, []() -> MeshBuffer const * {
 
 Load< Scene > slinky_scene4(LoadTagDefault, []() -> Scene const * {
 	return new Scene(data_path("slinky4.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
-		Mesh const &mesh = slinky_meshes3->lookup(mesh_name);
+		Mesh const &mesh = slinky_meshes4->lookup(mesh_name);
 
 		//get 4 pairs of shapes
 		scene.drawables.emplace_back(transform);
@@ -234,6 +234,8 @@ PlayMode::PlayMode(int level) {
 		case 2:
 			current_bg = bg3_path;
 			break;
+		case 3:
+			current_bg = bg4_path;
 		default:
 			current_bg = bg1_path;
 	}
