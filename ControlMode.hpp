@@ -29,22 +29,7 @@ struct ControlMode : Mode {
 	char modeSelect = 'c';	// record selected mode, ('m', 'p', 'c') for menu, play, control
 	glm::vec2 mouse_pos = glm::vec2(std::numeric_limits<float>::max(),
 									std::numeric_limits<float>::max());	// mouse current position respect to window, origin at middle, [-1,1]
-
-	int menu_select = 0;
-
-	//button positions
-	glm::vec2 start_button_pos = glm::vec2(0.0f, -0.1f); //TODO: set button positions
-	glm::vec2 control_button_pos = glm::vec2(0.0f, -0.25f); //TODO: set button 
-
-	glm::vec2 highlight_pos = glm::vec2(0.3f, -0.05f);	// overlay menu options, (0.3f, -0.05f) or (0.3f, -0.1)
-	glm::mat4 hightlight_transform = glm::mat4(
-				0.21f, 0.0f, 0.0f, 0.0f,
-				0.0f, 0.09f, 0.0f, 0.0f,
-				0.0f, 0.0f, 1.0f, 0.0f,
-				0.0f, 0.0f, 0.0f, 1.0f
-			);
 	glm::u8vec4 white = glm::u8vec4(255, 255, 255, 255);
-	glm::u8vec4 font_color = glm::u8vec4(0x50, 0x44, 0x3b, 0xff);
 
 	//background
 	GLuint white_tex;
