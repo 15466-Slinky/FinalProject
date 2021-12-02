@@ -24,3 +24,7 @@ In game music obtained from https://freepd.com/
 SFX from https://freesound.org
 
 Wood texture from https://unsplash.com/
+
+#### Cheat:
+
+press f1 to skip levels
