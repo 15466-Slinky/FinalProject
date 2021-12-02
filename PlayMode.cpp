@@ -479,7 +479,6 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 				Sound::stop_all_samples();
 				Mode::set_current(std::make_shared< MenuMode >());
 				return true;
-			} 
 		}
 
 	} else if (evt.type == SDL_KEYUP) {
