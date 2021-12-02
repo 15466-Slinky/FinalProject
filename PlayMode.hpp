@@ -158,9 +158,9 @@ struct PlayMode : Mode {
 	std::string bg1_path = "bg.png";
 	std::string bg2_path = "bg2.png";
 	std::string bg3_path = "bg3.png";
-	std::string bg4_path = "bg4.png";
-	std::string bg5_path = "bg5.png";
-	std::string bg6_path = "bg6.png";
+	std::string bg4_path = "bg4_flipped.png";
+	std::string bg5_path = "bg5_flipped.png";
+	std::string bg6_path = "bg6_flipped.png";
 	std::string current_bg = bg1_path;
 
 	//sound
