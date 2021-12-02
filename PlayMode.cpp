@@ -4,6 +4,7 @@
 
 #include "PlayMode.hpp"
 #include "MenuMode.hpp"
+#include "WinMode.hpp"
 
 #include "DrawLines.hpp"
 #include "Mesh.hpp"
@@ -498,7 +499,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			space.pressed = false;
 
 			// play spring sfx when release
-			spring_boing_SFX = Sound::play(*spring_boing_sample, 1.0f, 0.0f);
+			spring_boing_SFX = Sound::play(*spring_boing_sample, 0.6f, 0.0f);
 
 			return true;
 		}
@@ -549,6 +550,15 @@ void PlayMode::update(float elapsed) {
 			Sound::stop_all_samples();
 			Mode::set_current(std::make_shared< PlayMode >(level_id + 1));
 		}
+	}
+	if (game_over && level_id + 1 == LEVEL_CNT) {
+		level_switch_timer += elapsed;
+		if (level_switch_timer > 10.f) {
+			Sound::stop_all_samples();
+			Mode::set_current(std::make_shared< WinMode >());
+			return;
+		}
+
 	}
 }
 
@@ -622,8 +632,8 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	}
 	if (game_over) { 
 		//use DrawLines to overlay some text for the last level
-		if(level_id + 1 == LEVEL_CNT)
-			draw_text(glm::vec2(-aspect + 0.5f, 0.0f), "GAME OVER: YOU WIN!", 0.4f);
+		//if(level_id + 1 == LEVEL_CNT)
+			//draw_text(glm::vec2(-aspect + 0.5f, 0.0f), "GAME OVER: YOU WIN!", 0.4f);
 
 		celebrate_draw(drawable_size);
 	}
@@ -813,7 +823,7 @@ void PlayMode::interact_objects(float elapsed) {
 			if (glm::abs(glm::length(cat_head->position - fish->position) - eat_dist) < 1.0f ||
 				glm::abs(glm::length(cat_tail->position - fish->position) - eat_dist) < 1.0f) {
 				// near fish, play nt effect
-				cat_meow_SFX = Sound::play(*cat_meow_sample, 1.0f, 0.0f);
+				cat_meow_SFX = Sound::play(*cat_meow_sample, 0.6f, 0.0f);
 
 				// "delete" fish
 				fish->scale = glm::vec3(0.0f, 0.0f, 0.0f);

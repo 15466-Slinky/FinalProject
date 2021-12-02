@@ -11,38 +11,32 @@
 #include <vector>
 #include <deque>
 
-struct ControlMode : Mode {
-	ControlMode();
-	virtual ~ControlMode();
+struct WinMode : Mode {
+	WinMode();
+	virtual ~WinMode();
 
 	//functions called by main loop:
-	virtual bool handle_event(SDL_Event const &, glm::uvec2 const &window_size) override;
+	virtual bool handle_event(SDL_Event const&, glm::uvec2 const& window_size) override;
 	virtual void update(float elapsed) override;
-	virtual void draw(glm::uvec2 const &drawable_size) override;
+	virtual void draw(glm::uvec2 const& drawable_size) override;
 
-	void draw_image(GLuint &tex, float left, float right, float top, float bottom);
+	void draw_image(GLuint& tex, float left, float right, float top, float bottom);
 
 	//----- game state -----
 
 	//input tracking:
 	bool clicked = false;
-	char modeSelect = 'c';	// record selected mode, ('m', 'p', 'c') for menu, play, control
+	char modeSelect = 'p';	// record selected mode, ('m', 'p') for menu, play
 	glm::vec2 mouse_pos = glm::vec2(std::numeric_limits<float>::max(),
-									std::numeric_limits<float>::max());	// mouse current position respect to window, origin at middle, [-1,1]
+		std::numeric_limits<float>::max());	// mouse current position respect to window, origin at middle, [-1,1]
 	glm::u8vec4 white = glm::u8vec4(255, 255, 255, 255);
 
 	//background
 	GLuint white_tex;
 	GLuint bg1_tex;
 	GLuint bg2_tex;
-	GLuint bg1_back_highlighted_tex;
-	GLuint bg1_next_highlighted_tex;
-	GLuint bg2_back_highlighted_tex;
-	std::string bg1_path = "control_bg1.png";
-	std::string bg2_path = "control_bg2.png";
-	std::string bg1_back_path = "control_bg1_backselected.png";
-	std::string bg1_next_path = "control_bg1_nextselected.png";
-	std::string bg2_back_path = "control_bg2_backselected.png";
+	std::string bg1_path = "win_screen.png";
+	std::string bg2_path = "win_screen_selected.png";
 	GLuint active_tex;
 
 	struct Vertex {

@@ -1,6 +1,5 @@
+#include "WinMode.hpp"
 #include "MenuMode.hpp"
-#include "PlayMode.hpp"
-#include "ControlMode.hpp"
 
 #include "DrawLines.hpp"
 #include "gl_errors.hpp"
@@ -13,8 +12,8 @@
 
 #include <random>
 #include <iostream>	//TODO: only for debug, delete later
-	
-MenuMode::MenuMode() {
+
+WinMode::WinMode() {
 	//taken from game0
 	//----- allocate OpenGL resources -----
 	{ //vertex buffer:
@@ -106,9 +105,9 @@ MenuMode::MenuMode() {
 	std::vector< glm::u8vec4 > data;
 	glm::uvec2 size(0, 0);
 
-	load_png(data_path(bg_play_path), &size, &data, UpperLeftOrigin);
-	glGenTextures(1, &play_highlighted_tex);
-	glBindTexture(GL_TEXTURE_2D, play_highlighted_tex);
+	load_png(data_path(bg2_path), &size, &data, UpperLeftOrigin);
+	glGenTextures(1, &bg2_tex);
+	glBindTexture(GL_TEXTURE_2D, bg2_tex);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -116,19 +115,9 @@ MenuMode::MenuMode() {
 	glBindTexture(GL_TEXTURE_2D, 0);
 	data.clear();
 
-	load_png(data_path(bg_control_path), &size, &data, UpperLeftOrigin);
-	glGenTextures(1, &control_highlighted_tex);
-	glBindTexture(GL_TEXTURE_2D, control_highlighted_tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glGenerateMipmap(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	data.clear();
-
-	load_png(data_path(bg_path), &size, &data, UpperLeftOrigin);
-	glGenTextures(1, &bg_tex);
-	glBindTexture(GL_TEXTURE_2D, bg_tex);
+	load_png(data_path(bg1_path), &size, &data, UpperLeftOrigin);
+	glGenTextures(1, &bg1_tex);
+	glBindTexture(GL_TEXTURE_2D, bg1_tex);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -137,32 +126,30 @@ MenuMode::MenuMode() {
 	data.clear();
 
 	//glBindVertexArray(0);
-
-	active_tex = bg_tex;
+	active_tex = bg1_tex;
 }
 
-MenuMode::~MenuMode() {
+WinMode::~WinMode() {
 	glDeleteTextures(1, &white_tex);
 	white_tex = 0;
 
-	glDeleteTextures(1, &bg_tex);
-	bg_tex = 0;
+	glDeleteTextures(1, &bg1_tex);
+	bg1_tex = 0;
 
-	glDeleteTextures(1, &play_highlighted_tex);
-	play_highlighted_tex = 0;
-
-	glDeleteTextures(1, &control_highlighted_tex);
-	control_highlighted_tex = 0;
+	glDeleteTextures(1, &bg2_tex);
+	bg2_tex = 0;
 }
 
-bool MenuMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
+
+bool WinMode::handle_event(SDL_Event const& evt, glm::uvec2 const& window_size) {
 	// check where is mouse and which button to be clicked
 
 	if (evt.type == SDL_MOUSEBUTTONDOWN) {
 		clicked = true;
 
 		return true;
-	} else if (evt.type == SDL_MOUSEMOTION) {
+	}
+	else if (evt.type == SDL_MOUSEMOTION) {
 		// record current location, to hightlight option
 		mouse_pos = glm::vec2(evt.motion.x, evt.motion.y);
 		mouse_pos.x = 2.0f * (mouse_pos.x / float(window_size.x)) - 1.0f;
@@ -173,52 +160,40 @@ bool MenuMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	return false;
 }
 
-void MenuMode::update(float elapsed) {
+void WinMode::update(float elapsed) {
 
 	//std::cout << "mouse_pos: " << glm::to_string(mouse_pos) << std::endl;
 
 	// update highlight
-	if(mouse_pos.x >= -0.93f && mouse_pos.x <= -0.39f){
-		if(mouse_pos.y <= 0.05f && mouse_pos.y >= -0.22f){
-			//highlight_pos.y = -0.05f;
-			active_tex = play_highlighted_tex;
-			modeSelect = 'p';	// play mode
-		}else if(mouse_pos.y <= -0.42f && mouse_pos.y >= -0.69f){
-			//highlight_pos.y = -0.2f;
-			active_tex = control_highlighted_tex;
-			modeSelect = 'c';	// control prompt
+	if (mouse_pos.y <= -0.60f) {
+		if (mouse_pos.x >= 0.46f && mouse_pos.x <= 0.95f) {
+			modeSelect = 'm';	// menu
+			active_tex = bg2_tex;
 		}
 		else {
-			active_tex = bg_tex;
-			modeSelect = 'm';
+			modeSelect = 'p';  // stay on screen
+			active_tex = bg1_tex;
 		}
 	}
 	else {
-		active_tex = bg_tex;
-		modeSelect = 'm';
+		modeSelect = 'p';  // stay on screen
+		active_tex = bg1_tex;
 	}
 
-	if(clicked){
-		switch(modeSelect){
-			case 'p':
-				Mode::set_current(std::make_shared< PlayMode >(0));
-				break;
-
-			case 'c':
-				Mode::set_current(std::make_shared< ControlMode >());
-				break;
-
-			default:
-				break;
+	if (clicked) {
+		switch (modeSelect) {
+		case 'm':
+			Mode::set_current(std::make_shared< MenuMode >());
+			break;
+		default:
+			break;
 		}
-
 		clicked = false;
-
 	}
-	
+
 }
 
-void MenuMode::draw(glm::uvec2 const &drawable_size) {
+void WinMode::draw(glm::uvec2 const& drawable_size) {
 	//clear the color buffer:
 	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -244,7 +219,7 @@ void MenuMode::draw(glm::uvec2 const &drawable_size) {
 	GL_ERRORS();
 }
 
-void MenuMode::draw_image(GLuint &tex, float left, float right, float top, float bottom) {
+void WinMode::draw_image(GLuint& tex, float left, float right, float top, float bottom) {
 	std::vector< Vertex > vertices;
 	vertices.emplace_back(Vertex(glm::vec3(left, top, 0.0f), white, glm::vec2(0.0f, 1.0f)));
 	vertices.emplace_back(Vertex(glm::vec3(right, top, 0.0f), white, glm::vec2(1.0f, 1.0f)));
