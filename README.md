@@ -1,6 +1,12 @@
 # FinalProject
 15466 final project
 
+## Screenshots
+
+![Main menu](main_menu.png)
+
+![Gameplay](gameplay.png)
+
 ## Code
 circle-line-segment intersection: https://stackoverflow.com/questions/1073336/circle-line-segment-collision-detection-algorithm
 
@@ -16,3 +22,5 @@ scenes/slinky.blend contains the game world, built with Blender.
 In game music obtained from https://freepd.com/
 
 SFX from https://freesound.org
+
+Wood texture from https://unsplash.com/
