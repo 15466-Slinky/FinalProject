@@ -135,7 +135,7 @@ Load< MeshBuffer > slinky_meshes5(LoadTagDefault, []() -> MeshBuffer const * {
 
 Load< Scene > slinky_scene5(LoadTagDefault, []() -> Scene const * {
 	return new Scene(data_path("slinky5.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
-		Mesh const &mesh = slinky_meshes3->lookup(mesh_name);
+		Mesh const &mesh = slinky_meshes5->lookup(mesh_name);
 
 		//get 4 pairs of shapes
 		scene.drawables.emplace_back(transform);
@@ -161,7 +161,7 @@ Load< MeshBuffer > slinky_meshes6(LoadTagDefault, []() -> MeshBuffer const * {
 
 Load< Scene > slinky_scene6(LoadTagDefault, []() -> Scene const * {
 	return new Scene(data_path("slinky6.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
-		Mesh const &mesh = slinky_meshes3->lookup(mesh_name);
+		Mesh const &mesh = slinky_meshes6->lookup(mesh_name);
 
 		//get 4 pairs of shapes
 		scene.drawables.emplace_back(transform);
