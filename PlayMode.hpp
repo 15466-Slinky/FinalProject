@@ -82,6 +82,7 @@ struct PlayMode : Mode {
 	bool game_over = false;
 	int level_id;
 	float level_switch_timer = 0.f;
+	bool skip_level = false;
 
 	//collisions
 	CollisionManager collision_manager;

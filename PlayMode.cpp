@@ -219,6 +219,7 @@ PlayMode::PlayMode(int level) {
 	srand((unsigned int)time(NULL));
 
 	level_id = level;
+	skip_level = false;
 
 	// Pick the scene we want to load
 	scene = *(*scenes[level]);
@@ -479,6 +480,10 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 				Sound::stop_all_samples();
 				Mode::set_current(std::make_shared< MenuMode >());
 				return true;
+		} else if (evt.key.keysym.sym == SDLK_F1) {
+				//cheat key for testing
+				skip_level = true;
+				return true;
 		}
 
 	} else if (evt.type == SDL_KEYUP) {
@@ -541,7 +546,7 @@ void PlayMode::update(float elapsed) {
 	space.downs = 0;
 
 	// If we won and it's not the last level, wait 2 seconds and then enter the next level
-	if(game_over && level_id + 1 < LEVEL_CNT) {
+	if((game_over && level_id + 1 < LEVEL_CNT) || skip_level) {
 		level_switch_timer += elapsed;
 
 		if(level_switch_timer > 2.f) {
@@ -550,7 +555,7 @@ void PlayMode::update(float elapsed) {
 			Mode::set_current(std::make_shared< PlayMode >(level_id + 1));
 		}
 	}
-	if (game_over && level_id + 1 == LEVEL_CNT) {
+	if ((game_over && level_id + 1 == LEVEL_CNT) || skip_level) {
 		level_switch_timer += elapsed;
 		if (level_switch_timer > 10.f) {
 			Sound::stop_all_samples();
