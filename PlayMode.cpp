@@ -126,7 +126,7 @@ Load< Scene > slinky_scene4(LoadTagDefault, []() -> Scene const * {
 });
 
 
-/*
+
 Load< MeshBuffer > slinky_meshes5(LoadTagDefault, []() -> MeshBuffer const * {
 	MeshBuffer const *ret = new MeshBuffer(data_path("slinky5.pnct"));
 	slinky_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
@@ -150,9 +150,9 @@ Load< Scene > slinky_scene5(LoadTagDefault, []() -> Scene const * {
 		drawable.pipeline.count = mesh.count;
 	});
 });
-*/
 
-/*
+
+
 Load< MeshBuffer > slinky_meshes6(LoadTagDefault, []() -> MeshBuffer const * {
 	MeshBuffer const *ret = new MeshBuffer(data_path("slinky6.pnct"));
 	slinky_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
@@ -176,22 +176,23 @@ Load< Scene > slinky_scene6(LoadTagDefault, []() -> Scene const * {
 		drawable.pipeline.count = mesh.count;
 	});
 });
-*/
+
 
 // Array of the loaded scenes to dereference on PlayMode creation
-/*
+
 Load< Scene >* scenes[LEVEL_CNT] = {&slinky_scene1,
 									&slinky_scene2,
 									&slinky_scene3,
 									&slinky_scene4,
 									&slinky_scene5,
 									&slinky_scene6};
-*/
 
+/*
 Load< Scene >* scenes[LEVEL_CNT] = {&slinky_scene1,
 									&slinky_scene2,
 									&slinky_scene3,
 									&slinky_scene4};
+*/
 
 //--------------- Music and SFX loading --------------//
 Load< Sound::Sample > bgm_loop_sample(LoadTagDefault, []() -> Sound::Sample const * {
@@ -236,8 +237,13 @@ PlayMode::PlayMode(int level) {
 			break;
 		case 3:
 			current_bg = bg4_path;
+			break;
+		case 4:
+			current_bg = bg5_path;
+			break;
 		default:
 			current_bg = bg1_path;
+			break;
 	}
 
 	// get pointer to each shape
