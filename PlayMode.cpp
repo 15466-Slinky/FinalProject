@@ -13,7 +13,7 @@
 #include "hex_dump.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/string_cast.hpp>	//TODO: only for debug, can delete
+//#include <glm/gtx/string_cast.hpp>	//TODO: only for debug, can delete
 #include <glm/gtc/quaternion.hpp>
 
 #include <random>
@@ -100,9 +100,97 @@ Load< Scene > slinky_scene3(LoadTagDefault, []() -> Scene const * {
 });
 
 
+Load< MeshBuffer > slinky_meshes4(LoadTagDefault, []() -> MeshBuffer const * {
+	MeshBuffer const *ret = new MeshBuffer(data_path("slinky4.pnct"));
+	slinky_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
+	return ret;
+});
+
+Load< Scene > slinky_scene4(LoadTagDefault, []() -> Scene const * {
+	return new Scene(data_path("slinky4.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+		Mesh const &mesh = slinky_meshes3->lookup(mesh_name);
+
+		//get 4 pairs of shapes
+		scene.drawables.emplace_back(transform);
+
+		Scene::Drawable &drawable = scene.drawables.back();
+
+		drawable.pipeline = lit_color_texture_program_pipeline;
+
+		drawable.pipeline.vao = slinky_meshes_for_lit_color_texture_program;
+		drawable.pipeline.type = mesh.type;
+		drawable.pipeline.start = mesh.start;
+		drawable.pipeline.count = mesh.count;
+	});
+});
+
+
+/*
+Load< MeshBuffer > slinky_meshes5(LoadTagDefault, []() -> MeshBuffer const * {
+	MeshBuffer const *ret = new MeshBuffer(data_path("slinky5.pnct"));
+	slinky_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
+	return ret;
+});
+
+Load< Scene > slinky_scene5(LoadTagDefault, []() -> Scene const * {
+	return new Scene(data_path("slinky5.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+		Mesh const &mesh = slinky_meshes3->lookup(mesh_name);
+
+		//get 4 pairs of shapes
+		scene.drawables.emplace_back(transform);
+
+		Scene::Drawable &drawable = scene.drawables.back();
+
+		drawable.pipeline = lit_color_texture_program_pipeline;
+
+		drawable.pipeline.vao = slinky_meshes_for_lit_color_texture_program;
+		drawable.pipeline.type = mesh.type;
+		drawable.pipeline.start = mesh.start;
+		drawable.pipeline.count = mesh.count;
+	});
+});
+*/
+
+/*
+Load< MeshBuffer > slinky_meshes6(LoadTagDefault, []() -> MeshBuffer const * {
+	MeshBuffer const *ret = new MeshBuffer(data_path("slinky6.pnct"));
+	slinky_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
+	return ret;
+});
+
+Load< Scene > slinky_scene6(LoadTagDefault, []() -> Scene const * {
+	return new Scene(data_path("slinky6.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+		Mesh const &mesh = slinky_meshes3->lookup(mesh_name);
+
+		//get 4 pairs of shapes
+		scene.drawables.emplace_back(transform);
+
+		Scene::Drawable &drawable = scene.drawables.back();
+
+		drawable.pipeline = lit_color_texture_program_pipeline;
+
+		drawable.pipeline.vao = slinky_meshes_for_lit_color_texture_program;
+		drawable.pipeline.type = mesh.type;
+		drawable.pipeline.start = mesh.start;
+		drawable.pipeline.count = mesh.count;
+	});
+});
+*/
 
 // Array of the loaded scenes to dereference on PlayMode creation
-Load< Scene >* scenes[LEVEL_CNT] = {&slinky_scene1, &slinky_scene2, &slinky_scene3};
+/*
+Load< Scene >* scenes[LEVEL_CNT] = {&slinky_scene1,
+									&slinky_scene2,
+									&slinky_scene3,
+									&slinky_scene4,
+									&slinky_scene5,
+									&slinky_scene6};
+*/
+
+Load< Scene >* scenes[LEVEL_CNT] = {&slinky_scene1,
+									&slinky_scene2,
+									&slinky_scene3,
+									&slinky_scene4};
 
 //--------------- Music and SFX loading --------------//
 Load< Sound::Sample > bgm_loop_sample(LoadTagDefault, []() -> Sound::Sample const * {
@@ -385,8 +473,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 			player.grabbing = false;
 			return true;
-		} else if (evt.type == SDL_KEYDOWN) {
-			if (evt.key.keysym.sym == SDLK_ESCAPE) {
+		} else if (evt.key.keysym.sym == SDLK_ESCAPE) {
 				//TODO: need to move everything that holds playmode inplace
 				Sound::stop_all_samples();
 				Mode::set_current(std::make_shared< MenuMode >());

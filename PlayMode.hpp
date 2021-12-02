@@ -19,7 +19,7 @@
 
 #define GRAVITY 10.f
 #define DEATH_BOUND -50.f
-#define LEVEL_CNT 3
+#define LEVEL_CNT 4	// 3
 
 struct PlayMode : Mode {
 	PlayMode(int level);
