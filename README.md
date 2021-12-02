@@ -17,7 +17,13 @@ random float generator: https://stackoverflow.com/questions/686353/random-float-
 generate random point on a circle: https://stackoverflow.com/questions/9879258/how-can-i-generate-random-points-on-a-circles-circumference-in-javascript
 
 ## Asset
-scenes/slinky.blend contains the game world, built with Blender.
+Scenes are built with Blender:
+* scenes/slinky1.blend
+* scenes/slinky2.blend
+* scenes/slinky3.blend
+* scenes/slinky4.blend
+* scenes/slinky5.blend
+* scenes/slinky6.blend
 
 In game music obtained from https://freepd.com/
 
