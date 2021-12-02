@@ -19,7 +19,7 @@
 
 #define GRAVITY 10.f
 #define DEATH_BOUND -50.f
-#define LEVEL_CNT 4	// 3
+#define LEVEL_CNT 6	// 3
 
 struct PlayMode : Mode {
 	PlayMode(int level);
@@ -159,6 +159,7 @@ struct PlayMode : Mode {
 	std::string bg2_path = "bg2.png";
 	std::string bg3_path = "bg3.png";
 	std::string bg4_path = "bg4.png";
+	std::string bg5_path = "bg5.png";
 	std::string current_bg = bg1_path;
 
 	//sound
