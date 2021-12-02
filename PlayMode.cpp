@@ -241,6 +241,9 @@ PlayMode::PlayMode(int level) {
 		case 4:
 			current_bg = bg5_path;
 			break;
+		case 5:
+			current_bg = bg6_path;
+			break;
 		default:
 			current_bg = bg1_path;
 			break;
